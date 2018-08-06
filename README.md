@@ -1,4 +1,4 @@
-# wp-config ![100% Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)
+# wp-config [![Build Status](https://travis-ci.com/roots/wp-config.svg?branch=master)](https://travis-ci.com/roots/wp-config) ![100% Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)
 
 
 ## Tests

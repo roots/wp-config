@@ -1,0 +1,22 @@
+@startuml
+
+class Config {
+  -{static} $configMap:array
+  __
+  ..important..
+  +{static} define(key : string, value):void
+  +{static} apply():void
+  ..misc..
+  +{static} get(key : string):mixed
+  +{static} remove(key : string):void
+  -{static} defined(key : string):bool
+}
+
+package exceptions {
+  class ConstantAlreadyDefinedException
+  class UndefinedConfigKeyException
+  RuntimeException <|-- ConstantAlreadyDefinedException
+  RuntimeException <|-- UndefinedConfigKeyException
+}
+
+@enduml

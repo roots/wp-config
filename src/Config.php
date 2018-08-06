@@ -14,7 +14,7 @@ class Config
     /**
      * @var array
      */
-    private static $configMap = [];
+    protected static $configMap = [];
 
     /**
      * @param string $key
@@ -99,7 +99,7 @@ class Config
      * @return bool
      * @throws ConstantAlreadyDefinedException
      */
-    private static function defined($key)
+    protected static function defined($key)
     {
         if (defined($key)) {
             $message = "Bedrock aborted trying to redefine constant '$key'";

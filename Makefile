@@ -4,7 +4,7 @@
 DRUN=docker run --rm -v $(shell pwd):/app -w /app
 RUN=${DRUN} php:7
 COMPOSER=${DRUN} composer
-COMPOSER_INSTALL_ARGS=--no-ansi --no-interaction --no-progress --no-scripts --optimize-autoloader
+COMPOSER_INSTALL_ARGS=--no-ansi --no-interaction --no-progress --no-scripts --optimize-autoloader --prefer-dist
 PHPUNIT=vendor/bin/phpunit
 COVERAGE=phpdbg -qrr ${PHPUNIT} --coverage-html coverage --coverage-clover coverage/clover.xml
 PHPCS=vendor/bin/phpcs src

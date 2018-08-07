@@ -1,4 +1,27 @@
-# wp-config [![Build Status](https://travis-ci.com/roots/wp-config.svg?branch=master)](https://travis-ci.com/roots/wp-config) ![100% Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)
+# wp-config
+
+[![Build Status](https://travis-ci.com/roots/wp-config.svg?branch=master)](https://travis-ci.com/roots/wp-config) 
+[![Coverage Status](https://coveralls.io/repos/github/roots/wp-config/badge.svg?branch=master)](https://coveralls.io/github/roots/wp-config?branch=master)
+
+```php
+Config::define('WP_DEBUG_DISPLAY', false);
+
+Config::define('WP_DEBUG_DISPLAY', true);
+
+Config::apply();
+
+echo WP_DEBUG_DISPLAY;
+// true
+```
+
+[Why?](./docs/why.md)
+
+## \Roots\WPConfig
+
+- [Config](./src/Config.php)
+- Exceptions
+  - [ConstantAlreadyDefinedException](./src/Exceptions/ConstantAlreadyDefinedException.php)
+  - [UndefinedConfigKeyException](./src/Exceptions/UndefinedConfigKeyException.php)
 
 
 ## Tests

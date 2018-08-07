@@ -1,9 +1,13 @@
-.PHONY: default test test-fast clean install update init phpcs phpcbf test-coverage
+.PHONY: default test test-fast test-coverage clean install update init phpcs phpcbf
+.PHONY: travis-install travis-test travis-coverage travis-phpcs
 
 DRUN=docker run --rm -v $(shell pwd):/app -w /app
-RUN=${DRUN} php:7-cli
+RUN=${DRUN} php:7
 COMPOSER=${DRUN} composer
+COMPOSER_INSTALL_ARGS=--no-ansi --no-interaction --no-progress --no-scripts --optimize-autoloader
 PHPUNIT=vendor/bin/phpunit
+COVERAGE=phpdbg -qrr ${PHPUNIT} --coverage-html coverage --coverage-clover coverage/clover.xml
+PHPCS=vendor/bin/phpcs src
 
 default: vendor test
 
@@ -24,22 +28,34 @@ test-fast: vendor
 	${DRUN} php:7 ${PHPUNIT}
 
 test-coverage: vendor
-	${DRUN} php:7 phpdbg -qrr ${PHPUNIT} --coverage-html coverage
+	${RUN} ${COVERAGE}
 
 clean:
 	${RUN} rm -rf vendor composer.lock
 
 install:
-	${COMPOSER} install --no-ansi --no-interaction --no-progress --no-scripts --optimize-autoloader
+	${COMPOSER} install ${COMPOSER_INSTALL_ARGS}
 
 update:
-	${COMPOSER} composer update
+	${COMPOSER} update
 
-init: clean ${VENDOR_TARGET}
+init: clean vendor
 
 phpcs: vendor
-	${RUN} vendor/bin/phpcs src
+	${RUN} ${PHPCS}
 
 phpcbf: vendor
-	${RUN} php:7-cli vendor/bin/phpcbf src
+	${RUN} vendor/bin/phpcbf src
 
+travis-install:
+	composer install ${COMPOSER_INSTALL_ARGS}
+
+travis-test:
+	${PHPUNIT}
+
+travis-coverage:
+	${COVERAGE}
+	vendor/bin/php-coveralls --coverage_clover coverage/clover.xml --json_path coverage/coveralls.json
+
+travis-phpcs:
+	${PHPCS}

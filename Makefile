@@ -3,6 +3,7 @@
 DRUN=docker run --rm -v $(shell pwd):/app -w /app
 RUN=${DRUN} php:7-cli
 COMPOSER=${DRUN} composer
+PHPUNIT=vendor/bin/phpunit
 
 default: vendor test
 
@@ -13,17 +14,17 @@ vendor: composer.lock
 	${MAKE} install
 
 test: vendor
-	${DRUN} php:5.6 vendor/bin/phpunit
-	${DRUN} php:7.0 vendor/bin/phpunit
-	${DRUN} php:7.1 vendor/bin/phpunit
-	${DRUN} php:7.2 vendor/bin/phpunit
-	${DRUN} php:7 vendor/bin/phpunit
+	${DRUN} php:5.6 ${PHPUNIT}
+	${DRUN} php:7.0 ${PHPUNIT}
+	${DRUN} php:7.1 ${PHPUNIT}
+	${DRUN} php:7.2 ${PHPUNIT}
+	${DRUN} php:7 ${PHPUNIT}
 
 test-fast: vendor
-	${DRUN} php:7 vendor/bin/phpunit
+	${DRUN} php:7 ${PHPUNIT}
 
 test-coverage: vendor
-	${DRUN} php:7 phpdbg -qrr vendor/bin/phpunit --coverage-html coverage
+	${DRUN} php:7 phpdbg -qrr ${PHPUNIT} --coverage-html coverage
 
 clean:
 	${RUN} rm -rf vendor composer.lock

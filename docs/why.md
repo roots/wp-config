@@ -64,7 +64,18 @@ php > var_dump(WP_DEBUG_DISPLAY);
 bool(true)
 ```
 
-Yikes.
+Yikes. You can get a notice to show if you do:
+
+```
+php > error_reporting(E_ALL);
+php > ini_set('display_errors', 1);
+php > define('WP_DEBUG_DISPLAY', true);
+php > define('WP_DEBUG_DISPLAY', false);
+php > Notice: Constant WP_DEBUG_DISPLAY already defined in php shell code on line 1
+php > var_dump(WP_DEBUG_DISPLAY);
+bool(true)
+```
+
 
 ### Not Consistent With Roots Recommendations
 

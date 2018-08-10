@@ -35,7 +35,7 @@ class Config
     {
         if (!array_key_exists($key, self::$configMap)) {
             $class = self::class;
-            throw new UndefinedConfigKeyException("'$key' has not been set by $class::define('$key', ...)");
+            throw new UndefinedConfigKeyException("'$key' has not been defined. Use $class::define('$key', ...)");
         }
         
         return self::$configMap[$key];
@@ -102,7 +102,7 @@ class Config
     protected static function defined($key)
     {
         if (defined($key)) {
-            $message = "Bedrock aborted trying to redefine constant '$key'";
+            $message = "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already been occurred elsewhere.";
             throw new ConstantAlreadyDefinedException($message);
         }
         

@@ -35,7 +35,7 @@ class Config
     {
         if (!array_key_exists($key, self::$configMap)) {
             $class = self::class;
-            throw new UndefinedConfigKeyException("'$key' has not been defined. Use $class::define('$key', ...)");
+            throw new UndefinedConfigKeyException("'$key' has not been defined. Use `$class::define('$key', ...)`.");
         }
         
         return self::$configMap[$key];

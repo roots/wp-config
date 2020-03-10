@@ -37,10 +37,10 @@ class Config
             $class = self::class;
             throw new UndefinedConfigKeyException("'$key' has not been defined. Use `$class::define('$key', ...)`.");
         }
-        
+
         return self::$configMap[$key];
     }
-    
+
     /**
      * @param string $key
      */
@@ -93,7 +93,7 @@ class Config
             defined($key) or define($key, $value);
         }
     }
-    
+
     /**
      * @param string $key
      * @return bool
@@ -105,7 +105,59 @@ class Config
             $message = "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already been occurred elsewhere.";
             throw new ConstantAlreadyDefinedException($message);
         }
-        
+
         return false;
+    }
+
+    /**
+     * Define set of config items.
+     *
+     * @param array definitions
+     * @return void
+     */
+    protected static function defineSet($definitions)
+    {
+        foreach ($definitions as $const => $def) {
+            self::define($const, $def);
+        }
+    }
+
+    /**
+     * Checks a value in the config map.
+     *
+     * @param string config key
+     * @return bool
+     */
+    protected static function is($key, $definition)
+    {
+        return self::$configMap[$key] == $definition;
+    }
+
+    /**
+     * Checks a key against the config map.
+     *
+     * @param string config key
+     * @return bool
+     */
+    protected static function containsKey($definition)
+    {
+        return array_key_exists($definition, self::$configMap);
+    }
+
+    /**
+     * Checks an array of keys against the config map.
+     *
+     * @param array config keys
+     * @return bool
+     */
+    protected static function containsKeys(array $definitions)
+    {
+        foreach ($definitions as $definition) {
+            if (! self::containsKey($definition)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

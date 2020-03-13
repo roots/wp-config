@@ -2,13 +2,14 @@
 
 namespace Roots\WPConfig;
 
+use PHPUnit\Framework\TestCase;
 use Roots\WPConfig\Exceptions\ConstantAlreadyDefinedException;
 use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 
 /**
  * @runTestsInSeparateProcesses
  */
-class ConfigTest extends \PHPUnit_Framework_TestCase
+class ConfigTest extends TestCase
 {
   
   public function testDefineHappy() {

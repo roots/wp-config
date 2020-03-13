@@ -18,10 +18,11 @@ vendor: composer.lock
 	${MAKE} install
 
 test: vendor
-	${DRUN} php:5.6 ${PHPUNIT}
 	${DRUN} php:7.0 ${PHPUNIT}
 	${DRUN} php:7.1 ${PHPUNIT}
 	${DRUN} php:7.2 ${PHPUNIT}
+	${DRUN} php:7.3 ${PHPUNIT}
+	${DRUN} php:7.4 ${PHPUNIT}
 	${DRUN} php:7 ${PHPUNIT}
 
 test-fast: vendor

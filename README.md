@@ -28,12 +28,12 @@ echo WP_DEBUG_DISPLAY;
 
 Just run `make` to do everything
 
-We use PHPUnit 5 because it has compatibility for PHP 5.6
+We use PHPUnit 6 because it has compatibility for PHP 7.0
 
-[PHPUnit Docs](https://phpunit.de/manual/5.7/en/index.html)
+[PHPUnit Docs](https://phpunit.de/manual/6.5/en/writing-tests-for-phpunit.html)
 
 There are 3 test commands
 
-- `make test` run the full test suite from php 5.6 to 7.x
+- `make test` run the full test suite from php to 7.0 to 7.4
 - `make test-fast` run php 7 tests
 - `make test-coverage` generate an html test coverage report in `./coverage`

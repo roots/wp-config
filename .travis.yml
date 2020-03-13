@@ -11,6 +11,8 @@ install: make travis-install
 script: make travis-test
 
 jobs:
+  allow_failures:
+  - php: nightly
   include:
   - stage: "Follow Up"
     name: "Test Coverage"

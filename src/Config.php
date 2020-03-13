@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Roots\WPConfig;
 
@@ -12,16 +13,16 @@ use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 class Config
 {
     /**
-     * @var array
+     * @var array<string, mixed>
      */
     protected static $configMap = [];
 
     /**
      * @param string $key
-     * @param $value
+     * @param mixed $value
      * @throws ConstantAlreadyDefinedException
      */
-    public static function define($key, $value)
+    public static function define(string $key, $value): void
     {
         self::defined($key) or self::$configMap[$key] = $value;
     }
@@ -31,7 +32,7 @@ class Config
      * @return mixed
      * @throws UndefinedConfigKeyException
      */
-    public static function get($key)
+    public static function get(string $key)
     {
         if (!array_key_exists($key, self::$configMap)) {
             $class = self::class;
@@ -44,7 +45,7 @@ class Config
     /**
      * @param string $key
      */
-    public static function remove($key)
+    public static function remove(string $key): void
     {
         unset(self::$configMap[$key]);
     }
@@ -73,7 +74,7 @@ class Config
      *
      * @throws ConstantAlreadyDefinedException
      */
-    public static function apply()
+    public static function apply(): void
     {
         // Scan configMap to see if user is trying to redefine any constants.
         // We do this because we don't want to 'half apply' the configMap. The user should be able to catch the
@@ -96,10 +97,10 @@ class Config
     
     /**
      * @param string $key
-     * @return bool
+     * @return false
      * @throws ConstantAlreadyDefinedException
      */
-    protected static function defined($key)
+    protected static function defined(string $key): bool
     {
         if (defined($key)) {
             $message = "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already been occurred elsewhere.";

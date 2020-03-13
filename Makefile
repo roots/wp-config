@@ -1,4 +1,4 @@
-.PHONY: default clean install update init phpcs phpcbf
+.PHONY: default clean init phpcs phpcbf
 .PHONY: travis-install travis-test travis-coverage travis-phpcs
 
 DRUN=docker run --rm -v $(shell pwd):/app -w /app
@@ -12,10 +12,10 @@ PHPCS=vendor/bin/phpcs src
 default: vendor test
 
 composer.lock: composer.json
-	${MAKE} update
+	${COMPOSER} update ${COMPOSER_FLAGS}
 
 vendor: composer.lock
-	${MAKE} install
+	${COMPOSER} install ${COMPOSER_FLAGS}
 
 .PHONY: test-% test test-fast test-coverage
 test-%: vendor
@@ -31,12 +31,6 @@ test-coverage: vendor
 
 clean:
 	${RUN} rm -rf vendor composer.lock
-
-install:
-	${COMPOSER} install ${COMPOSER_FLAGS}
-
-update:
-	${COMPOSER} update ${COMPOSER_FLAGS}
 
 init: clean vendor
 

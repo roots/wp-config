@@ -5,6 +5,7 @@ namespace Roots\WPConfig;
 
 use PHPUnit\Framework\TestCase;
 use Roots\WPConfig\Exceptions\ConstantAlreadyDefinedException;
+use Roots\WPConfig\Exceptions\NumericConstantNameException;
 use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 
 /**
@@ -16,6 +17,12 @@ class ConfigTest extends TestCase
   public function testDefineHappy() {
     Config::define('WP_SCRIPT_DEBUG', true);
     $this->assertEquals(true, Config::get('WP_SCRIPT_DEBUG'));
+  }
+
+  public function testDefineSadIntegerKey() {
+      $this->expectException(NumericConstantNameException::class);
+
+      Config::define('123', true);
   }
   
   public function testDefineSad() {

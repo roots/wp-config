@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Roots\WPConfig;
 
 use Roots\WPConfig\Exceptions\ConstantAlreadyDefinedException;
+use Roots\WPConfig\Exceptions\NumericConstantNameException;
 use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 
 /**
@@ -24,6 +25,10 @@ class Config
      */
     public static function define(string $key, $value): void
     {
+        if (is_numeric($key)) {
+            throw new NumericConstantNameException("Numeric constant name '$key' is not allowed.");
+        }
+
         self::defined($key) or self::$configMap[$key] = $value;
     }
 

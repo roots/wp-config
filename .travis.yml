@@ -16,6 +16,8 @@ jobs:
   include:
   - stage: "Follow Up"
     name: "Test Coverage"
+    php: '7.1'
     script: travis_retry make travis-coverage
   - name: "Code Style"
+    php: '7.1'
     script: make travis-phpcs

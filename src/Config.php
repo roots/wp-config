@@ -22,7 +22,7 @@ class Config
      * @param $value
      * @throws ConstantAlreadyDefinedException
      */
-    public static function define(string $key, $value)
+    public static function define(string $key, $value): void
     {
         self::defined($key) or self::$configMap[$key] = $value;
     }
@@ -45,7 +45,7 @@ class Config
     /**
      * @param string $key
      */
-    public static function remove(string $key)
+    public static function remove(string $key): void
     {
         unset(self::$configMap[$key]);
     }
@@ -74,7 +74,7 @@ class Config
      *
      * @throws ConstantAlreadyDefinedException
      */
-    public static function apply()
+    public static function apply(): void
     {
         // Scan configMap to see if user is trying to redefine any constants.
         // We do this because we don't want to 'half apply' the configMap. The user should be able to catch the
@@ -100,7 +100,7 @@ class Config
      * @return bool
      * @throws ConstantAlreadyDefinedException
      */
-    protected static function defined(string $key)
+    protected static function defined(string $key): bool
     {
         if (defined($key)) {
             $message = "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already been occurred elsewhere.";

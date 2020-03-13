@@ -22,7 +22,7 @@ class Config
      * @param $value
      * @throws ConstantAlreadyDefinedException
      */
-    public static function define($key, $value)
+    public static function define(string $key, $value)
     {
         self::defined($key) or self::$configMap[$key] = $value;
     }
@@ -32,7 +32,7 @@ class Config
      * @return mixed
      * @throws UndefinedConfigKeyException
      */
-    public static function get($key)
+    public static function get(string $key)
     {
         if (!array_key_exists($key, self::$configMap)) {
             $class = self::class;
@@ -45,7 +45,7 @@ class Config
     /**
      * @param string $key
      */
-    public static function remove($key)
+    public static function remove(string $key)
     {
         unset(self::$configMap[$key]);
     }
@@ -100,7 +100,7 @@ class Config
      * @return bool
      * @throws ConstantAlreadyDefinedException
      */
-    protected static function defined($key)
+    protected static function defined(string $key)
     {
         if (defined($key)) {
             $message = "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already been occurred elsewhere.";

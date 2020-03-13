@@ -1,4 +1,4 @@
-.PHONY: default test test-fast test-coverage clean install update init phpcs phpcbf
+.PHONY: default clean install update init phpcs phpcbf
 .PHONY: travis-install travis-test travis-coverage travis-phpcs
 
 DRUN=docker run --rm -v $(shell pwd):/app -w /app
@@ -17,6 +17,7 @@ composer.lock: composer.json
 vendor: composer.lock
 	${MAKE} install
 
+.PHONY: test-% test test-fast test-coverage
 test-%: vendor
 	${DRUN} php:$(@:test-%=%) ${PHPUNIT}
 

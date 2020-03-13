@@ -23,6 +23,9 @@ echo WP_DEBUG_DISPLAY;
   - [ConstantAlreadyDefinedException](./src/Exceptions/ConstantAlreadyDefinedException.php)
   - [UndefinedConfigKeyException](./src/Exceptions/UndefinedConfigKeyException.php)
 
+## Requirements
+
+This library requires PHP 7.1+. If you need PHP 5.6 support: use [1.0.0](https://github.com/roots/wp-config/tree/1.0.0).
 
 ## Tests
 

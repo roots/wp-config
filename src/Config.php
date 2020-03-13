@@ -13,13 +13,13 @@ use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 class Config
 {
     /**
-     * @var array
+     * @var array<string, mixed>
      */
     protected static $configMap = [];
 
     /**
      * @param string $key
-     * @param $value
+     * @param mixed $value
      * @throws ConstantAlreadyDefinedException
      */
     public static function define(string $key, $value): void
@@ -97,7 +97,7 @@ class Config
     
     /**
      * @param string $key
-     * @return bool
+     * @return false
      * @throws ConstantAlreadyDefinedException
      */
     protected static function defined(string $key): bool

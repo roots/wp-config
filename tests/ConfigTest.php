@@ -65,6 +65,9 @@ class ConfigTest extends TestCase
     $this->assertEquals(-1, Config::get('CRAIG'));
     $this->assertEquals(1, Config::get('KALEN'));
     $this->assertEquals(1, Config::get('BRANDON', 1));
+    $this->assertEquals(true, Config::get('BRANDON', true));
+    $this->assertEquals(false, Config::get('BRANDON', false));
+    $this->assertEquals('somestring', Config::get('BRANDON', 'somestring'));
   }
 
   public function testGetSad()

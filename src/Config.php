@@ -115,7 +115,7 @@ class Config
      *
      * @param iterable key-value array of definitions
      */
-    protected static function defineMap(iterable $definitions): void
+    public static function defineMap(iterable $definitions): void
     {
         foreach ($definitions as $const => $def) {
             self::define($const, $def);
@@ -128,7 +128,7 @@ class Config
      * @param string config key
      * @return bool
      */
-    protected static function containsKey(string $definition): bool
+    public static function containsKey(string $definition): bool
     {
         return array_key_exists($definition, self::$configMap);
     }
@@ -139,7 +139,7 @@ class Config
      * @param iterable config keys
      * @return bool
      */
-    protected static function containsKeys(iterable $definitions): bool
+    public static function containsKeys(iterable $definitions): bool
     {
         foreach ($definitions as $definition) {
             if (! self::containsKey($definition)) {

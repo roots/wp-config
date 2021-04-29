@@ -21,7 +21,7 @@ class Config
      * @param $value
      * @throws ConstantAlreadyDefinedException
      */
-    public static function define($key, $value)
+    public static function define(string $key, $value)
     {
         self::defined($key) or self::$configMap[$key] = $value;
     }
@@ -31,7 +31,7 @@ class Config
      * @return mixed
      * @throws UndefinedConfigKeyException
      */
-    public static function get($key)
+    public static function get(string $key)
     {
         if (!array_key_exists($key, self::$configMap)) {
             $class = self::class;
@@ -44,7 +44,7 @@ class Config
     /**
      * @param string $key
      */
-    public static function remove($key)
+    public static function remove(string $key)
     {
         unset(self::$configMap[$key]);
     }
@@ -99,7 +99,7 @@ class Config
      * @return bool
      * @throws ConstantAlreadyDefinedException
      */
-    protected static function defined($key)
+    protected static function defined(string $key)
     {
         if (defined($key)) {
             $message = "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already been occurred elsewhere.";
@@ -110,27 +110,15 @@ class Config
     }
 
     /**
-     * Define set of config items.
+     * Define map of config items.
      *
-     * @param array definitions
-     * @return void
+     * @param iterable key-value array of definitions
      */
-    protected static function defineSet($definitions)
+    protected static function defineMap(iterable $definitions)
     {
         foreach ($definitions as $const => $def) {
             self::define($const, $def);
         }
-    }
-
-    /**
-     * Checks a value in the config map.
-     *
-     * @param string config key
-     * @return bool
-     */
-    protected static function is($key, $definition)
-    {
-        return self::$configMap[$key] == $definition;
     }
 
     /**
@@ -139,7 +127,7 @@ class Config
      * @param string config key
      * @return bool
      */
-    protected static function containsKey($definition)
+    protected static function containsKey(string $definition)
     {
         return array_key_exists($definition, self::$configMap);
     }
@@ -147,10 +135,10 @@ class Config
     /**
      * Checks an array of keys against the config map.
      *
-     * @param array config keys
+     * @param iterable config keys
      * @return bool
      */
-    protected static function containsKeys(array $definitions)
+    protected static function containsKeys(iterable $definitions)
     {
         foreach ($definitions as $definition) {
             if (! self::containsKey($definition)) {

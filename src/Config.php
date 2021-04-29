@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Roots\WPConfig;
 
@@ -12,16 +13,16 @@ use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 class Config
 {
     /**
-     * @var array
+     * @var array<string, mixed>
      */
     protected static $configMap = [];
 
     /**
      * @param string $key
-     * @param $value
+     * @param mixed $value
      * @throws ConstantAlreadyDefinedException
      */
-    public static function define(string $key, $value)
+    public static function define(string $key, $value): void
     {
         self::defined($key) or self::$configMap[$key] = $value;
     }
@@ -44,7 +45,7 @@ class Config
     /**
      * @param string $key
      */
-    public static function remove(string $key)
+    public static function remove(string $key): void
     {
         unset(self::$configMap[$key]);
     }
@@ -73,7 +74,7 @@ class Config
      *
      * @throws ConstantAlreadyDefinedException
      */
-    public static function apply()
+    public static function apply(): void
     {
         // Scan configMap to see if user is trying to redefine any constants.
         // We do this because we don't want to 'half apply' the configMap. The user should be able to catch the
@@ -96,10 +97,10 @@ class Config
 
     /**
      * @param string $key
-     * @return bool
+     * @return false
      * @throws ConstantAlreadyDefinedException
      */
-    protected static function defined(string $key)
+    protected static function defined(string $key): bool
     {
         if (defined($key)) {
             $message = "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already been occurred elsewhere.";
@@ -114,7 +115,7 @@ class Config
      *
      * @param iterable key-value array of definitions
      */
-    protected static function defineMap(iterable $definitions)
+    protected static function defineMap(iterable $definitions): void
     {
         foreach ($definitions as $const => $def) {
             self::define($const, $def);
@@ -127,7 +128,7 @@ class Config
      * @param string config key
      * @return bool
      */
-    protected static function containsKey(string $definition)
+    protected static function containsKey(string $definition): bool
     {
         return array_key_exists($definition, self::$configMap);
     }
@@ -138,7 +139,7 @@ class Config
      * @param iterable config keys
      * @return bool
      */
-    protected static function containsKeys(iterable $definitions)
+    protected static function containsKeys(iterable $definitions): bool
     {
         foreach ($definitions as $definition) {
             if (! self::containsKey($definition)) {

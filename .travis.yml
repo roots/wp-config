@@ -1,9 +1,9 @@
 language: php
 php:
+- '7.4'
+- '7.3'
 - '7.2'
 - '7.1'
-- '7.0'
-- '5.6'
 - nightly
 
 install: make travis-install
@@ -11,9 +11,13 @@ install: make travis-install
 script: make travis-test
 
 jobs:
+  allow_failures:
+  - php: nightly
   include:
   - stage: "Follow Up"
     name: "Test Coverage"
+    php: '7.1'
     script: travis_retry make travis-coverage
   - name: "Code Style"
+    php: '7.1'
     script: make travis-phpcs

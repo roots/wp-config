@@ -1,5 +1,4 @@
 .PHONY: default clean init phpcs phpcbf
-.PHONY: travis-install travis-test travis-coverage travis-phpcs
 
 DRUN=docker run --rm -v $(shell pwd):/app -w /app
 RUN=${DRUN} php:7
@@ -39,16 +38,3 @@ phpcs: vendor
 
 phpcbf: vendor
 	${RUN} vendor/bin/phpcbf src
-
-travis-install:
-	composer install ${COMPOSER_FLAGS}
-
-travis-test:
-	${PHPUNIT}
-
-travis-coverage:
-	${COVERAGE}
-	vendor/bin/php-coveralls --coverage_clover coverage/clover.xml --json_path coverage/coveralls.json
-
-travis-phpcs:
-	${PHPCS}

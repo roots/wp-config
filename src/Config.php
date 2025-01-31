@@ -29,12 +29,17 @@ class Config
 
     /**
      * @param string $key
+     * @param mixed $default
      * @return mixed
      * @throws UndefinedConfigKeyException
      */
-    public static function get(string $key)
+    public static function get(string $key, $default = null)
     {
         if (!array_key_exists($key, self::$configMap)) {
+            if (!empty($default)) {
+                return $default;
+            }
+            
             $class = self::class;
             throw new UndefinedConfigKeyException("'$key' has not been defined. Use `$class::define('$key', ...)`.");
         }

@@ -1,6 +1,5 @@
 # wp-config
 
-[![Build Status](https://travis-ci.com/roots/wp-config.svg?branch=master)](https://travis-ci.com/roots/wp-config) 
 [![Coverage Status](https://coveralls.io/repos/github/roots/wp-config/badge.svg?branch=master)](https://coveralls.io/github/roots/wp-config?branch=master)
 
 ```php

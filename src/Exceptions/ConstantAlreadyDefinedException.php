@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Roots\WPConfig\Exceptions;
@@ -8,7 +9,4 @@ namespace Roots\WPConfig\Exceptions;
  * This should be thrown when a user attempts to define() a constant that has already been defined
  * @package Roots\Bedrock
  */
-class ConstantAlreadyDefinedException extends \RuntimeException
-{
-
-}
+class ConstantAlreadyDefinedException extends \RuntimeException {}

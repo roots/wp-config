@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Roots\WPConfig;
@@ -38,10 +39,10 @@ class Config
             $class = self::class;
             throw new UndefinedConfigKeyException("'$key' has not been defined. Use `$class::define('$key', ...)`.");
         }
-        
+
         return self::$configMap[$key];
     }
-    
+
     /**
      * @param string $key
      */
@@ -94,7 +95,7 @@ class Config
             defined($key) or define($key, $value);
         }
     }
-    
+
     /**
      * @param string $key
      * @return false
@@ -106,7 +107,7 @@ class Config
             $message = "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already been occurred elsewhere.";
             throw new ConstantAlreadyDefinedException($message);
         }
-        
+
         return false;
     }
 }

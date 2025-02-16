@@ -1,12 +1,12 @@
 {
   "name": "roots/wp-config",
-  "description": "Collect configuration values and safely define() them",
+  "description": "Fluent configuration management for WordPress",
   "type": "library",
   "license": "MIT",
   "authors": [
     {
-      "name": "Austin Pray",
-      "email": "austin@austinpray.com"
+      "name": "roots.dev",
+      "email": "team@roots.dev"
     }
   ],
   "autoload": {
@@ -14,22 +14,27 @@
       "Roots\\WPConfig\\": "src"
     }
   },
-  "require": {
-    "php": ">=8.1"
-  },
-  "require-dev": {
-    "laravel/pint": "^1.13",
-    "roave/security-advisories": "dev-master",
-    "phpunit/phpunit": "^7.5",
-    "php-coveralls/php-coveralls": "^2.2"
-  },
-  "extra": {
-    "branch-alias": {
-      "dev-master": "2.0.x-dev"
+  "autoload-dev": {
+    "psr-4": {
+      "Roots\\WPConfig\\Tests\\": "tests"
     }
   },
+  "require": {
+    "php": ">=8.1",
+    "vlucas/phpdotenv": "^5.6"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.0",
+    "laravel/pint": "^1.13"
+  },
   "scripts": {
+    "test": "phpunit",
     "lint": "pint --test",
     "lint:fix": "pint"
-  }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }

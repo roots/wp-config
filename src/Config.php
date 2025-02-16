@@ -4,110 +4,140 @@ declare(strict_types=1);
 
 namespace Roots\WPConfig;
 
+use Dotenv\Dotenv;
+use Dotenv\Repository\RepositoryBuilder;
+use Dotenv\Repository\Adapter\EnvConstAdapter;
+use Dotenv\Repository\Adapter\PutenvAdapter;
 use Roots\WPConfig\Exceptions\ConstantAlreadyDefinedException;
 use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 
-/**
- * Class Config
- * @package Roots\Bedrock
- */
 class Config
 {
     /**
      * @var array<string, mixed>
      */
-    protected static $configMap = [];
+    protected array $configMap = [];
 
     /**
-     * @param string $key
-     * @param mixed $value
-     * @throws ConstantAlreadyDefinedException
+     * @var string
      */
-    public static function define(string $key, $value): void
+    protected string $rootDir;
+
+    public function __construct(string $rootDir)
     {
-        self::defined($key) or self::$configMap[$key] = $value;
+        $this->rootDir = $rootDir;
     }
 
     /**
+     * Load environment variables from .env files
+     */
+    public function bootstrapEnv(): self
+    {
+        $envFiles = file_exists($this->rootDir . '/.env.local')
+            ? ['.env', '.env.local']
+            : ['.env'];
+
+        $repository = RepositoryBuilder::createWithNoAdapters()
+            ->addAdapter(EnvConstAdapter::class)
+            ->addAdapter(PutenvAdapter::class)
+            ->immutable()
+            ->make();
+
+        $dotenv = Dotenv::create($repository, $this->rootDir, $envFiles, false);
+        $dotenv->load();
+
+        return $this;
+    }
+
+    /**
+     * Set a configuration value
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return self
+     * @throws ConstantAlreadyDefinedException
+     */
+    public function set(string $key, $value): self
+    {
+        if ($this->isConstantDefined($key)) {
+            throw new ConstantAlreadyDefinedException(
+                "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already occurred elsewhere.",
+            );
+        }
+
+        $this->configMap[$key] = $value;
+
+        return $this;
+    }
+
+    /**
+     * Get a configuration value
+     *
      * @param string $key
      * @return mixed
      * @throws UndefinedConfigKeyException
      */
-    public static function get(string $key)
+    public function get(string $key)
     {
-        if (!array_key_exists($key, self::$configMap)) {
-            $class = self::class;
-            throw new UndefinedConfigKeyException("'$key' has not been defined. Use `$class::define('$key', ...)`.");
+        if (!array_key_exists($key, $this->configMap)) {
+            throw new UndefinedConfigKeyException(
+                "'$key' has not been defined. Use `set('$key', ...)` first.",
+            );
         }
 
-        return self::$configMap[$key];
+        return $this->configMap[$key];
     }
 
     /**
-     * @param string $key
+     * Conditionally execute configuration logic
+     *
+     * @param bool|callable $condition
+     * @param callable $callback
+     * @return self
      */
-    public static function remove(string $key): void
+    public function when($condition, callable $callback): self
     {
-        unset(self::$configMap[$key]);
+        $result = is_callable($condition) ? $condition($this) : $condition;
+
+        if ($result) {
+            $callback($this);
+        }
+
+        return $this;
     }
 
     /**
-     * define() all values in $configMap and throw an exception if we are attempting to redefine a constant.
-     *
-     * We throw the exception because a silent rejection of a configuration value is unacceptable. This method fails
-     * fast before undefined behavior propagates due to unexpected configuration sneaking through.
-     *
-     * ```
-     * define('BEDROCK', 'no');
-     * define('BEDROCK', 'yes');
-     * echo BEDROCK;
-     * // output: 'no'
-     * ```
-     *
-     * vs.
-     *
-     * ```
-     * define('BEDROCK', 'no');
-     * Config::define('BEDROCK', 'yes');
-     * Config::apply();
-     * // output: Fatal error: Uncaught Roots\Bedrock\ConstantAlreadyDefinedException ...
-     * ```
+     * Define all configuration values
      *
      * @throws ConstantAlreadyDefinedException
      */
-    public static function apply(): void
+    public function apply(): void
     {
-        // Scan configMap to see if user is trying to redefine any constants.
-        // We do this because we don't want to 'half apply' the configMap. The user should be able to catch the
-        // exception, repair their config, and run apply() again
-        foreach (self::$configMap as $key => $value) {
-            try {
-                self::defined($key);
-            } catch (ConstantAlreadyDefinedException $e) {
-                if (constant($key) !== $value) {
-                    throw $e;
-                }
+        // Check for any conflicts before applying
+        foreach ($this->configMap as $key => $value) {
+            if ($this->isConstantDefined($key) && constant($key) !== $value) {
+                throw new ConstantAlreadyDefinedException(
+                    "Cannot redefine constant '$key' with different value.",
+                );
             }
         }
 
-        // If all is well, apply the configMap ignoring entries that have already been applied
-        foreach (self::$configMap as $key => $value) {
-            defined($key) or define($key, $value);
+        // Apply all configurations
+        foreach ($this->configMap as $key => $value) {
+            if (!defined($key)) {
+                define($key, $value);
+            }
         }
     }
 
     /**
+     * Check if a constant is already defined
+     *
      * @param string $key
-     * @return false
-     * @throws ConstantAlreadyDefinedException
+     * @return bool
      */
-    protected static function defined(string $key): bool
+    protected function isConstantDefined(string $key): bool
     {
-        if (defined($key)) {
-            $message = "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already been occurred elsewhere.";
-            throw new ConstantAlreadyDefinedException($message);
-        }
-
-        return false;
+        return defined($key);
     }
 }

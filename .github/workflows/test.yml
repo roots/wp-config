@@ -1,0 +1,76 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+      - v2 # Temporary until v2 is merged into master
+  push:
+    branches:
+      - master
+      - v2 # Temporary until v2 is merged into master
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        php: ['8.1', '8.2', '8.3', '8.4']
+        dependency-versions: [lowest, highest]
+        coverage: [none]
+        exclude:
+          - php: '8.4'
+            dependency-versions: highest
+            coverage: none
+        include:
+          - php: '8.4'
+            dependency-versions: highest
+            coverage: xdebug
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: ${{ matrix.coverage }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: ramsey/composer-install@v3
+        with:
+          dependency-versions: ${{ matrix.dependency-versions }}
+          composer-options: --no-audit --optimize-autoloader
+
+      - run: composer test -- --coverage-clover coverage.xml
+        if: ${{ matrix.coverage == 'xdebug' }}
+
+      - run: composer test -- --no-coverage
+        if: ${{ matrix.coverage != 'xdebug' }}
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ matrix.coverage == 'xdebug' }}
+        with:
+          name: coverage
+          path: coverage.xml
+
+  coveralls:
+    needs: phpunit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage
+      - uses: coverallsapp/github-action@v2
+        with:
+          file: coverage.xml

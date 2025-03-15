@@ -52,13 +52,19 @@ class Config
     /**
      * Set a configuration value
      *
-     * @param string $key
+     * If $key is an array, then it will be treated as a map of key/value pairs
+     *
+     * @param string|array $key
      * @param mixed $value
      * @return self
      * @throws ConstantAlreadyDefinedException
      */
-    public function set(string $key, $value): self
+    public function set(string|array $key, $value = null): self
     {
+        if (is_array($key)) {
+            return $this->setMany($key);
+        }
+
         if ($this->isConstantDefined($key)) {
             throw new ConstantAlreadyDefinedException(
                 "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already occurred elsewhere.",
@@ -66,6 +72,35 @@ class Config
         }
 
         $this->configMap[$key] = $value;
+
+        return $this;
+    }
+
+    /**
+     * Set a configuration value from an environment variable
+     *
+     * If the environment variable is not defined, then the default value will be used.
+     *
+     * If $key is an array, then it will be treated as an indexed array of environment variables.
+     *
+     * @param string|array $key
+     * @param mixed $default
+     * @return self
+     * @throws ConstantAlreadyDefinedException
+     */
+    public function env(string|array $key, $default = null): self
+    {
+        if (is_array($key)) {
+            return $this->envMany($key, $default);
+        }
+
+        $value = match (true) {
+            function_exists('env') => env($key, $default),
+            function_exists('\Env\env') => \Env\env($key, $default),
+            default => getenv($key) ?? $_ENV[$key] ?? $default,
+        };
+
+        $this->set($key, $value);
 
         return $this;
     }
@@ -128,6 +163,24 @@ class Config
                 define($key, $value);
             }
         }
+    }
+
+    protected function setMany(array $configMap): self
+    {
+        foreach ($configMap as $key => $value) {
+            $this->set($key, $value);
+        }
+
+        return $this;
+    }
+
+    protected function envMany(array $configMap, $default): self
+    {
+        foreach ($configMap as $key) {
+            $this->env($key, $default);
+        }
+
+        return $this;
     }
 
     /**

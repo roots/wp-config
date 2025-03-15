@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Roots\WPConfig\Tests;
 
+use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use Roots\WPConfig\Config;
 use Roots\WPConfig\Exceptions\ConstantAlreadyDefinedException;
@@ -32,6 +33,44 @@ class ConfigTest extends TestCase
         $this->assertInstanceOf(Config::class, $result);
         $this->assertEquals('value1', $this->config->get('TEST_1'));
         $this->assertEquals('value2', $this->config->get('TEST_2'));
+    }
+
+    public function testSetArray()
+    {
+        $this->config->set([
+            'TEST_1' => 'value1',
+            'TEST_2' => 'value2',
+        ]);
+
+        $this->assertEquals('value1', $this->config->get('TEST_1'));
+        $this->assertEquals('value2', $this->config->get('TEST_2'));
+    }
+
+    #[Depends('testBootstrapEnv')]
+    public function testEnv()
+    {
+        $this->withDotEnv();
+        $this->config->env('TEST_ENV_VAR');
+        $this->config->env('BOGUS_ENV_VAR');
+        $this->config->env('BOGUS_ENV_VAR_WITH_DEFAULT', 'default_value');
+
+        $this->assertEquals('test_value', $this->config->get('TEST_ENV_VAR'));
+        $this->assertNull($this->config->get('BOGUS_ENV_VAR'));
+        $this->assertEquals('default_value', $this->config->get('BOGUS_ENV_VAR_WITH_DEFAULT'));
+    }
+
+    #[Depends('testBootstrapEnv')]
+    public function testEnvArray()
+    {
+        $this->withDotEnv(<<<ENV
+        TEST_ENV_VAR_1=value1
+        TEST_ENV_VAR_2=value2
+        ENV);
+        $this->config->env(['TEST_ENV_VAR_1', 'TEST_ENV_VAR_2', 'BOGUS_ENV_VAR']);
+
+        $this->assertEquals('value1', $this->config->get('TEST_ENV_VAR_1'));
+        $this->assertEquals('value2', $this->config->get('TEST_ENV_VAR_2'));
+        $this->assertNull($this->config->get('BOGUS_ENV_VAR'));
     }
 
     public function testGetUndefinedKey()
@@ -95,14 +134,29 @@ class ConfigTest extends TestCase
 
     public function testBootstrapEnv()
     {
-        // Create temporary .env file
-        file_put_contents($this->rootDir . '/.env', "TEST_ENV_VAR=test_value\n");
-
-        $this->config->bootstrapEnv();
-
+        $this->withDotEnv();
         $this->assertEquals('test_value', getenv('TEST_ENV_VAR'));
+    }
 
-        // Cleanup
+    public function testApplyWithArray()
+    {
+        $this->config
+            ->set([
+                'CONFIG_TEST_1' => 'applied1',
+                'CONFIG_TEST_2' => 'applied2',
+            ])
+            ->apply();
+
+        $this->assertTrue(defined('CONFIG_TEST_1'));
+        $this->assertTrue(defined('CONFIG_TEST_2'));
+        $this->assertEquals('applied1', CONFIG_TEST_1);
+        $this->assertEquals('applied2', CONFIG_TEST_2);
+    }
+
+    protected function withDotEnv(string $env = "TEST_ENV_VAR=test_value\n"): void
+    {
+        file_put_contents($this->rootDir . '/.env', $env);
+        $this->config->bootstrapEnv();
         unlink($this->rootDir . '/.env');
     }
 }

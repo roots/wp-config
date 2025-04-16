@@ -94,10 +94,12 @@ class Config
             return $this->envMany($key, $default);
         }
 
-        $value = match (true) {
-            function_exists('env') => env($key, $default),
-            default => getenv($key) ?? $_ENV[$key] ?? $default,
-        };
+	    $value = match (true) {
+	        function_exists('env') => env($key, $default),
+	        getenv($key) !== false => getenv($key),
+	        isset($_ENV[$key]) => $_ENV[$key],
+	        default => $default,
+	    };
 
         $this->set($key, $value);
 

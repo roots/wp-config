@@ -18,6 +18,7 @@ $config
 - 🔄 Fluent API for clean, chainable configuration
 - 🌍 Built-in environment variable loading
 - 🔀 Conditional configuration with `when()`
+- 🪝 WordPress-style hook system for extensible configuration
 - 📦 Zero dependencies (except `vlucas/phpdotenv`)
 
 ## Requirements
@@ -79,6 +80,24 @@ $config->bootstrapEnv(); // Loads .env and .env.local files
 $config
     ->set('DB_NAME', env('DB_NAME'))
     ->set('DB_USER', env('DB_USER'))
+    ->apply();
+```
+
+### Hook system
+
+The Config class includes a WordPress-style hook system for extensible configuration:
+
+```php
+// Register a hook
+Config::add_action('security_setup', function($config) {
+    $config->set('FORCE_SSL_ADMIN', true);
+    $config->set('DISALLOW_FILE_EDIT', true);
+});
+
+// Execute the hook
+$config
+    ->set('WP_ENV', 'production')
+    ->do_action('security_setup')
     ->apply();
 ```
 
@@ -177,6 +196,12 @@ Conditionally executes configuration logic.
 
 #### `apply(): void`
 Applies all configuration values by defining constants.
+
+#### `add_action(string $tag, callable $callback, int $priority = 10): void`
+Adds a hook callback that can be executed later with `do_action()`. Static method.
+
+#### `do_action(string $tag, ...$args): self`
+Executes all callbacks registered for the specified hook. Returns `$this` for chaining.
 
 ### Exceptions
 

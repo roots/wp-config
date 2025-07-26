@@ -23,6 +23,11 @@ class Config
      */
     protected string $rootDir;
 
+    /**
+     * @var array<string, array<int, array{callback: callable, priority: int}>>
+     */
+    protected static array $hooks = [];
+
     public function __construct(string $rootDir)
     {
         $this->rootDir = $rootDir;
@@ -136,6 +141,51 @@ class Config
 
         if ($result) {
             $callback($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add an action hook
+     *
+     * @param string $tag The hook name
+     * @param callable $callback The callback function
+     * @param int $priority The priority (lower numbers = higher priority)
+     * @return void
+     */
+    public static function add_action(string $tag, callable $callback, int $priority = 10): void
+    {
+        if (!isset(static::$hooks[$tag])) {
+            static::$hooks[$tag] = [];
+        }
+
+        static::$hooks[$tag][] = [
+            'callback' => $callback,
+            'priority' => $priority,
+        ];
+    }
+
+    /**
+     * Execute actions for a hook
+     *
+     * @param string $tag The hook name
+     * @param mixed ...$args Additional arguments to pass to callbacks
+     * @return self
+     */
+    public function do_action(string $tag, ...$args): self
+    {
+        if (!isset(static::$hooks[$tag])) {
+            return $this;
+        }
+
+        // Sort hooks by priority (lower numbers = higher priority)
+        $hooks = static::$hooks[$tag];
+        usort($hooks, fn($a, $b) => $a['priority'] <=> $b['priority']);
+
+        // Execute hooks with $config as first parameter
+        foreach ($hooks as $hook) {
+            $hook['callback']($this, ...$args);
         }
 
         return $this;

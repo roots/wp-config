@@ -101,7 +101,7 @@ class Config
 
         $value = match (true) {
             function_exists('env') => env($key, $default),
-            function_exists('\Env\env') => \Env\env($key, $default),
+            function_exists('\Env\env') => \Env\env($key) ?? $default,
             default => getenv($key) ?? $_ENV[$key] ?? $default,
         };
 

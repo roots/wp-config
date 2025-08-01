@@ -101,6 +101,26 @@ $config
     ->apply();
 ```
 
+#### Automatic `before_apply` hook
+
+The Config class automatically executes any `before_apply` hooks when `apply()` is called. This enables packages to register configuration logic that runs automatically without requiring manual hook calls:
+
+```php
+// Package authors can register automatic configuration
+Config::add_action('before_apply', function($config) {
+    // This runs automatically when apply() is called
+    $config->set('AUTOMATIC_CONFIG', 'set by package');
+});
+
+// Users just need to call apply() - no manual hook management required
+$config
+    ->set('WP_HOME', env('WP_HOME'))
+    ->set('WP_SITEURL', env('WP_HOME') . '/wp')
+    ->apply(); // Automatically runs all before_apply hooks
+```
+
+This pattern is especially useful for packages that need to configure WordPress automatically without requiring users to manually call hooks in their configuration files.
+
 ## Upgrading from v1
 
 ### Step 1: Update `composer.json`

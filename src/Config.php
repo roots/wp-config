@@ -198,6 +198,9 @@ class Config
      */
     public function apply(): void
     {
+        // Execute any registered before_apply hooks
+        $this->do_action('before_apply');
+
         // Check for any conflicts before applying
         foreach ($this->configMap as $key => $value) {
             if ($this->isConstantDefined($key) && constant($key) !== $value) {

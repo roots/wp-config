@@ -153,6 +153,73 @@ class ConfigTest extends TestCase
         $this->assertEquals('applied2', CONFIG_TEST_2);
     }
 
+    public function testAutomaticBeforeApplyHook()
+    {
+        $hookExecuted = false;
+
+        Config::add_action('before_apply', function($config) use (&$hookExecuted) {
+            $hookExecuted = true;
+        });
+
+        $this->config
+            ->set('HOOK_TEST', 'value')
+            ->apply();
+
+        $this->assertTrue($hookExecuted);
+        $this->assertTrue(defined('HOOK_TEST'));
+    }
+
+    public function testMultipleBeforeApplyHooksWithPriority()
+    {
+        $executionOrder = [];
+
+        Config::add_action('before_apply', function($config) use (&$executionOrder) {
+            $executionOrder[] = 'second';
+        }, 20);
+
+        Config::add_action('before_apply', function($config) use (&$executionOrder) {
+            $executionOrder[] = 'first';
+        }, 10);
+
+        $this->config
+            ->set('PRIORITY_TEST', 'value')
+            ->apply();
+
+        $this->assertEquals(['first', 'second'], $executionOrder);
+        $this->assertTrue(defined('PRIORITY_TEST'));
+    }
+
+    public function testBeforeApplyHookReceivesConfigInstance()
+    {
+        $receivedConfig = null;
+
+        Config::add_action('before_apply', function($config) use (&$receivedConfig) {
+            $receivedConfig = $config;
+        });
+
+        $this->config
+            ->set('INSTANCE_TEST', 'value')
+            ->apply();
+
+        $this->assertSame($this->config, $receivedConfig);
+    }
+
+    public function testBeforeApplyHookCanModifyConfig()
+    {
+        Config::add_action('before_apply', function($config) {
+            $config->set('HOOK_ADDED', 'added_by_hook');
+        });
+
+        $this->config
+            ->set('ORIGINAL_CONFIG', 'original')
+            ->apply();
+
+        $this->assertTrue(defined('ORIGINAL_CONFIG'));
+        $this->assertTrue(defined('HOOK_ADDED'));
+        $this->assertEquals('original', ORIGINAL_CONFIG);
+        $this->assertEquals('added_by_hook', HOOK_ADDED);
+    }
+
     protected function withDotEnv(string $env = "TEST_ENV_VAR=test_value\n"): void
     {
         file_put_contents($this->rootDir . '/.env', $env);

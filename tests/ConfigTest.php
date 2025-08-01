@@ -157,7 +157,7 @@ class ConfigTest extends TestCase
     {
         $hookExecuted = false;
 
-        Config::add_action('before_apply', function($config) use (&$hookExecuted) {
+        Config::add_action('before_apply', function ($config) use (&$hookExecuted) {
             $hookExecuted = true;
         });
 
@@ -173,11 +173,11 @@ class ConfigTest extends TestCase
     {
         $executionOrder = [];
 
-        Config::add_action('before_apply', function($config) use (&$executionOrder) {
+        Config::add_action('before_apply', function ($config) use (&$executionOrder) {
             $executionOrder[] = 'second';
         }, 20);
 
-        Config::add_action('before_apply', function($config) use (&$executionOrder) {
+        Config::add_action('before_apply', function ($config) use (&$executionOrder) {
             $executionOrder[] = 'first';
         }, 10);
 
@@ -193,7 +193,7 @@ class ConfigTest extends TestCase
     {
         $receivedConfig = null;
 
-        Config::add_action('before_apply', function($config) use (&$receivedConfig) {
+        Config::add_action('before_apply', function ($config) use (&$receivedConfig) {
             $receivedConfig = $config;
         });
 
@@ -206,7 +206,7 @@ class ConfigTest extends TestCase
 
     public function testBeforeApplyHookCanModifyConfig()
     {
-        Config::add_action('before_apply', function($config) {
+        Config::add_action('before_apply', function ($config) {
             $config->set('HOOK_ADDED', 'added_by_hook');
         });
 

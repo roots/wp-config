@@ -199,7 +199,7 @@ describe('hooks', function () {
     it('executes before_apply hooks automatically', function () {
         $hookExecuted = false;
 
-        $this->config->add_action('before_apply', function ($config) use (&$hookExecuted) {
+        $this->config->addAction('before_apply', function ($config) use (&$hookExecuted) {
             $hookExecuted = true;
         });
 
@@ -214,11 +214,11 @@ describe('hooks', function () {
     it('executes hooks in priority order', function () {
         $executionOrder = [];
 
-        $this->config->add_action('before_apply', function ($config) use (&$executionOrder) {
+        $this->config->addAction('before_apply', function ($config) use (&$executionOrder) {
             $executionOrder[] = 'second';
         }, 20);
 
-        $this->config->add_action('before_apply', function ($config) use (&$executionOrder) {
+        $this->config->addAction('before_apply', function ($config) use (&$executionOrder) {
             $executionOrder[] = 'first';
         }, 10);
 
@@ -233,7 +233,7 @@ describe('hooks', function () {
     it('passes config instance to hook callbacks', function () {
         $receivedConfig = null;
 
-        $this->config->add_action('before_apply', function ($config) use (&$receivedConfig) {
+        $this->config->addAction('before_apply', function ($config) use (&$receivedConfig) {
             $receivedConfig = $config;
         });
 
@@ -245,7 +245,7 @@ describe('hooks', function () {
     });
 
     it('allows hooks to modify config', function () {
-        $this->config->add_action('before_apply', function ($config) {
+        $this->config->addAction('before_apply', function ($config) {
             $config->set('HOOK_ADDED', 'added_by_hook');
         });
 
@@ -262,26 +262,26 @@ describe('hooks', function () {
     it('does not bleed hooks between instances', function () {
         $hookRan = false;
 
-        $this->config->add_action('custom_hook', function () use (&$hookRan) {
+        $this->config->addAction('custom_hook', function () use (&$hookRan) {
             $hookRan = true;
         });
 
         $other = new Config($this->rootDir);
-        $other->do_action('custom_hook');
+        $other->doAction('custom_hook');
 
         expect($hookRan)->toBeFalse();
     });
 
-    it('only fires before_apply once per apply call even if do_action is called manually', function () {
+    it('only fires before_apply once per apply call even if doAction is called manually', function () {
         $count = 0;
 
-        $this->config->add_action('before_apply', function () use (&$count) {
+        $this->config->addAction('before_apply', function () use (&$count) {
             $count++;
         });
 
         $this->config
             ->set('DOUBLE_FIRE_TEST', true)
-            ->do_action('before_apply')
+            ->doAction('before_apply')
             ->apply();
 
         expect($count)->toBe(1);
@@ -291,7 +291,7 @@ describe('hooks', function () {
     it('fires before_apply again on subsequent apply calls', function () {
         $count = 0;
 
-        $this->config->add_action('before_apply', function () use (&$count) {
+        $this->config->addAction('before_apply', function () use (&$count) {
             $count++;
         });
 
@@ -302,14 +302,14 @@ describe('hooks', function () {
         expect($count)->toBe(2);
     });
 
-    it('supports add_action chaining', function () {
+    it('supports addAction chaining', function () {
         $order = [];
 
         $this->config
-            ->add_action('before_apply', function () use (&$order) {
+            ->addAction('before_apply', function () use (&$order) {
                 $order[] = 'a';
             })
-            ->add_action('before_apply', function () use (&$order) {
+            ->addAction('before_apply', function () use (&$order) {
                 $order[] = 'b';
             })
             ->set('CHAIN_TEST', true)

@@ -105,7 +105,7 @@ The Config class includes an instance-scoped hook system for extensible configur
 
 ```php
 // Register a hook
-$config->add_action('security_setup', function($config) {
+$config->addAction('security_setup', function($config) {
     $config->set('FORCE_SSL_ADMIN', true);
     $config->set('DISALLOW_FILE_EDIT', true);
 });
@@ -113,7 +113,7 @@ $config->add_action('security_setup', function($config) {
 // Execute the hook
 $config
     ->set('WP_ENV', 'production')
-    ->do_action('security_setup')
+    ->doAction('security_setup')
     ->apply();
 ```
 
@@ -123,7 +123,7 @@ The Config class automatically executes any `before_apply` hooks when `apply()` 
 
 ```php
 // Package authors can register automatic configuration
-$config->add_action('before_apply', function($config) {
+$config->addAction('before_apply', function($config) {
     // This runs automatically when apply() is called
     $config->set('AUTOMATIC_CONFIG', 'set by package');
 });
@@ -223,7 +223,7 @@ Config::add_action('before_apply', function($config) { ... });
 After:
 
 ```php
-$config->add_action('before_apply', function($config) { ... });
+$config->addAction('before_apply', function($config) { ... });
 ```
 
 ### Removed APIs
@@ -256,10 +256,10 @@ Conditionally executes configuration logic. The condition can be a boolean or a 
 #### `apply(): void`
 Applies all configuration values by defining constants. Automatically runs `before_apply` hooks first.
 
-#### `add_action(string $tag, callable $callback, int $priority = 10): self`
-Adds a hook callback that can be executed later with `do_action()`. Returns `$this` for chaining.
+#### `addAction(string $tag, callable $callback, int $priority = 10): self`
+Adds a hook callback that can be executed later with `doAction()`. Returns `$this` for chaining.
 
-#### `do_action(string $tag, ...$args): self`
+#### `doAction(string $tag, ...$args): self`
 Executes all callbacks registered for the specified hook. Returns `$this` for chaining.
 
 ### Exceptions
@@ -281,7 +281,7 @@ $webrootDir = $rootDir . '/web';
 
 $config = new Config($rootDir);
 $config->bootstrapEnv()
-       ->do_action('config_loaded');
+       ->doAction('config_loaded');
 
 $config
     /**
@@ -293,21 +293,21 @@ $config
         'DB_CHARSET' => 'utf8mb4',
         'DB_COLLATE' => '',
     ])
-    ->do_action('database_configured')
+    ->doAction('database_configured')
 
     /**
      * URLs
      */
     ->env('WP_HOME')
     ->set('WP_SITEURL', $config->get('WP_HOME') . '/wp')
-    ->do_action('urls_configured')
+    ->doAction('urls_configured')
 
     /**
      * Environment
      */
     ->env('WP_ENV', 'production')
     ->set('WP_ENVIRONMENT_TYPE', $config->get('WP_ENV'))
-    ->do_action('environment_loaded')
+    ->doAction('environment_loaded')
 
     /**
      * Content directory
@@ -374,7 +374,7 @@ $config
 
     ->apply();
 
-$config->do_action('after_apply');
+$config->doAction('after_apply');
 
 $table_prefix = $_ENV['DB_PREFIX'] ?? 'wp_';
 

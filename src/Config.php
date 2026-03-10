@@ -151,7 +151,7 @@ class Config
      * @param  callable  $callback  The callback function
      * @param  int  $priority  The priority (lower numbers = higher priority)
      */
-    public function add_action(string $tag, callable $callback, int $priority = 10): self
+    public function addAction(string $tag, callable $callback, int $priority = 10): self
     {
         $this->hooks[$tag][] = [
             'callback' => $callback,
@@ -167,7 +167,7 @@ class Config
      * @param  string  $tag  The hook name
      * @param  mixed  ...$args  Additional arguments to pass to callbacks
      */
-    public function do_action(string $tag, mixed ...$args): self
+    public function doAction(string $tag, mixed ...$args): self
     {
         if ($tag === 'before_apply') {
             $this->beforeApplyFired = true;
@@ -192,7 +192,7 @@ class Config
      *
      * Automatically executes any registered `before_apply` hooks before
      * defining constants. The guard ensures `before_apply` only fires once
-     * per `apply()` call, even if `do_action('before_apply')` was called
+     * per `apply()` call, even if `doAction('before_apply')` was called
      * manually beforehand.
      *
      * @throws ConstantAlreadyDefinedException
@@ -200,7 +200,7 @@ class Config
     public function apply(): void
     {
         if (! $this->beforeApplyFired) {
-            $this->do_action('before_apply');
+            $this->doAction('before_apply');
         }
 
         $this->beforeApplyFired = false;
@@ -221,6 +221,8 @@ class Config
     }
 
     /**
+     * Set many configuration values from an associative array.
+     *
      * @param  array<string, mixed>  $configMap
      */
     protected function setMany(array $configMap): self
@@ -233,6 +235,8 @@ class Config
     }
 
     /**
+     * Set many configuration values from environment variables.
+     *
      * @param  string[]  $configMap
      */
     protected function envMany(array $configMap, mixed $default): self
@@ -244,6 +248,9 @@ class Config
         return $this;
     }
 
+    /**
+     * Determine whether the constant has already been defined.
+     */
     protected function isConstantDefined(string $key): bool
     {
         return defined($key);

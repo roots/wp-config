@@ -15,18 +15,31 @@ use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 class Config
 {
     /**
+     * In-memory map of config keys to values before apply().
+     *
      * @var array<string, mixed>
      */
     protected array $configMap = [];
 
     /**
+     * Registered hook callbacks grouped by hook tag.
+     *
      * @var array<string, array<int, array{callback: callable, priority: int}>>
      */
     protected array $hooks = [];
 
+    /**
+     * Tracks whether `before_apply` already fired for the current apply cycle.
+     */
     protected bool $beforeApplyFired = false;
 
+    /**
+     * Create a Config instance scoped to a project root directory.
+     */
     public function __construct(
+        /**
+         * Absolute project root directory used for loading environment files.
+         */
         protected string $rootDir,
     ) {}
 
@@ -58,9 +71,6 @@ class Config
      * overwrite the previous value. This is intentional for use in when()
      * blocks where environment-specific values override defaults.
      *
-     * @param  string|array<string, mixed>  $key
-     * @return self
-     *
      * @throws ConstantAlreadyDefinedException
      */
     public function set(string|array $key, mixed $value = null): self
@@ -88,9 +98,6 @@ class Config
      *
      * If $key is an array, it will be treated as an indexed array of
      * environment variable names.
-     *
-     * @param  string|string[]  $key
-     * @return self
      *
      * @throws ConstantAlreadyDefinedException
      */
@@ -130,8 +137,6 @@ class Config
 
     /**
      * Conditionally execute configuration logic
-     *
-     * @param  bool|Closure  $condition
      */
     public function when(bool|Closure $condition, callable $callback): self
     {
@@ -146,10 +151,6 @@ class Config
 
     /**
      * Add an action hook
-     *
-     * @param  string  $tag  The hook name
-     * @param  callable  $callback  The callback function
-     * @param  int  $priority  The priority (lower numbers = higher priority)
      */
     public function addAction(string $tag, callable $callback, int $priority = 10): self
     {
@@ -163,9 +164,6 @@ class Config
 
     /**
      * Execute actions for a hook
-     *
-     * @param  string  $tag  The hook name
-     * @param  mixed  ...$args  Additional arguments to pass to callbacks
      */
     public function doAction(string $tag, mixed ...$args): self
     {
@@ -222,8 +220,6 @@ class Config
 
     /**
      * Set many configuration values from an associative array.
-     *
-     * @param  array<string, mixed>  $configMap
      */
     protected function setMany(array $configMap): self
     {
@@ -236,8 +232,6 @@ class Config
 
     /**
      * Set many configuration values from environment variables.
-     *
-     * @param  string[]  $configMap
      */
     protected function envMany(array $configMap, mixed $default): self
     {

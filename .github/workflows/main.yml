@@ -1,4 +1,4 @@
-name: Pint
+name: CI
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ concurrency:
 permissions: {}
 
 jobs:
-  pint:
+  lint:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,3 +32,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - run: composer lint
+
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - run: composer install --no-interaction --prefer-dist
+
+      - run: composer test

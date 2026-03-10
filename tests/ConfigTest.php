@@ -40,6 +40,13 @@ describe('set', function () {
         expect($this->config->get('TEST_2'))->toBe('value2');
     });
 
+    it('overwrites existing config map entries', function () {
+        $this->config->set('OVERWRITE_TEST', 'first');
+        $this->config->set('OVERWRITE_TEST', 'second');
+
+        expect($this->config->get('OVERWRITE_TEST'))->toBe('second');
+    });
+
     it('throws when constant is already defined', function () {
         define('EXISTING_CONSTANT', 'original');
         $this->config->set('EXISTING_CONSTANT', 'new');
@@ -47,9 +54,22 @@ describe('set', function () {
 });
 
 describe('get', function () {
-    it('throws for undefined key', function () {
+    it('throws for undefined key without default', function () {
         $this->config->get('UNDEFINED_KEY');
     })->throws(UndefinedConfigKeyException::class);
+
+    it('returns default for undefined key when default is provided', function () {
+        expect($this->config->get('MISSING', 'fallback'))->toBe('fallback');
+    });
+
+    it('returns null default for undefined key', function () {
+        expect($this->config->get('MISSING', null))->toBeNull();
+    });
+
+    it('returns actual value even when default is provided', function () {
+        $this->config->set('EXISTS', 'real');
+        expect($this->config->get('EXISTS', 'fallback'))->toBe('real');
+    });
 });
 
 describe('env', function () {
@@ -75,6 +95,12 @@ describe('env', function () {
         expect($this->config->get('TEST_ENV_VAR_2'))->toBe('value2');
         expect($this->config->get('BOGUS_ENV_VAR'))->toBeNull();
     });
+
+    it('does not treat false from getenv as a value', function () {
+        $this->config->env('DEFINITELY_NOT_SET_ENV_VAR', 'the_default');
+
+        expect($this->config->get('DEFINITELY_NOT_SET_ENV_VAR'))->toBe('the_default');
+    });
 });
 
 describe('when', function () {
@@ -94,7 +120,7 @@ describe('when', function () {
         $this->config->get('CONDITION_FALSE');
     })->throws(UndefinedConfigKeyException::class);
 
-    it('accepts a callable condition', function () {
+    it('accepts a closure condition', function () {
         $this->config->when(function ($config) {
             return true;
         }, function ($config) {
@@ -102,6 +128,17 @@ describe('when', function () {
         });
 
         expect($this->config->get('CONDITION_CALLBACK'))->toBeTrue();
+    });
+
+    it('passes config instance to closure condition', function () {
+        $this->config->set('CHECK_KEY', 'yes');
+
+        $this->config->when(
+            fn($config) => $config->get('CHECK_KEY') === 'yes',
+            fn($config) => $config->set('DERIVED', true),
+        );
+
+        expect($this->config->get('DERIVED'))->toBeTrue();
     });
 });
 
@@ -147,13 +184,22 @@ describe('apply', function () {
             ->set('CONFLICT_TEST', 'new')
             ->apply();
     })->throws(ConstantAlreadyDefinedException::class);
+
+    it('detects conflicts at apply time for constants defined after set', function () {
+        $this->config->set('LATE_CONFLICT', 'from_config');
+
+        // Simulate a constant defined between set() and apply()
+        define('LATE_CONFLICT', 'from_elsewhere');
+
+        $this->config->apply();
+    })->throws(ConstantAlreadyDefinedException::class);
 });
 
 describe('hooks', function () {
     it('executes before_apply hooks automatically', function () {
         $hookExecuted = false;
 
-        Config::add_action('before_apply', function ($config) use (&$hookExecuted) {
+        $this->config->add_action('before_apply', function ($config) use (&$hookExecuted) {
             $hookExecuted = true;
         });
 
@@ -168,11 +214,11 @@ describe('hooks', function () {
     it('executes hooks in priority order', function () {
         $executionOrder = [];
 
-        Config::add_action('before_apply', function ($config) use (&$executionOrder) {
+        $this->config->add_action('before_apply', function ($config) use (&$executionOrder) {
             $executionOrder[] = 'second';
         }, 20);
 
-        Config::add_action('before_apply', function ($config) use (&$executionOrder) {
+        $this->config->add_action('before_apply', function ($config) use (&$executionOrder) {
             $executionOrder[] = 'first';
         }, 10);
 
@@ -187,7 +233,7 @@ describe('hooks', function () {
     it('passes config instance to hook callbacks', function () {
         $receivedConfig = null;
 
-        Config::add_action('before_apply', function ($config) use (&$receivedConfig) {
+        $this->config->add_action('before_apply', function ($config) use (&$receivedConfig) {
             $receivedConfig = $config;
         });
 
@@ -199,7 +245,7 @@ describe('hooks', function () {
     });
 
     it('allows hooks to modify config', function () {
-        Config::add_action('before_apply', function ($config) {
+        $this->config->add_action('before_apply', function ($config) {
             $config->set('HOOK_ADDED', 'added_by_hook');
         });
 
@@ -211,5 +257,65 @@ describe('hooks', function () {
         expect(defined('HOOK_ADDED'))->toBeTrue();
         expect(ORIGINAL_CONFIG)->toBe('original');
         expect(HOOK_ADDED)->toBe('added_by_hook');
+    });
+
+    it('does not bleed hooks between instances', function () {
+        $hookRan = false;
+
+        $this->config->add_action('custom_hook', function () use (&$hookRan) {
+            $hookRan = true;
+        });
+
+        $other = new Config($this->rootDir);
+        $other->do_action('custom_hook');
+
+        expect($hookRan)->toBeFalse();
+    });
+
+    it('only fires before_apply once per apply call even if do_action is called manually', function () {
+        $count = 0;
+
+        $this->config->add_action('before_apply', function () use (&$count) {
+            $count++;
+        });
+
+        $this->config
+            ->set('DOUBLE_FIRE_TEST', true)
+            ->do_action('before_apply')
+            ->apply();
+
+        expect($count)->toBe(1);
+        expect(defined('DOUBLE_FIRE_TEST'))->toBeTrue();
+    });
+
+    it('fires before_apply again on subsequent apply calls', function () {
+        $count = 0;
+
+        $this->config->add_action('before_apply', function () use (&$count) {
+            $count++;
+        });
+
+        $this->config->set('REAPPLY_TEST', 'value')->apply();
+        expect($count)->toBe(1);
+
+        $this->config->apply();
+        expect($count)->toBe(2);
+    });
+
+    it('supports add_action chaining', function () {
+        $order = [];
+
+        $this->config
+            ->add_action('before_apply', function () use (&$order) {
+                $order[] = 'a';
+            })
+            ->add_action('before_apply', function () use (&$order) {
+                $order[] = 'b';
+            })
+            ->set('CHAIN_TEST', true)
+            ->apply();
+
+        expect($order)->toBe(['a', 'b']);
+        expect(defined('CHAIN_TEST'))->toBeTrue();
     });
 });

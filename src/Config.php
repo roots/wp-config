@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Roots\WPConfig;
 
+use Closure;
 use Dotenv\Dotenv;
-use Dotenv\Repository\RepositoryBuilder;
 use Dotenv\Repository\Adapter\EnvConstAdapter;
 use Dotenv\Repository\Adapter\PutenvAdapter;
+use Dotenv\Repository\RepositoryBuilder;
 use Roots\WPConfig\Exceptions\ConstantAlreadyDefinedException;
 use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 
@@ -19,19 +20,15 @@ class Config
     protected array $configMap = [];
 
     /**
-     * @var string
-     */
-    protected string $rootDir;
-
-    /**
      * @var array<string, array<int, array{callback: callable, priority: int}>>
      */
-    protected static array $hooks = [];
+    protected array $hooks = [];
 
-    public function __construct(string $rootDir)
-    {
-        $this->rootDir = $rootDir;
-    }
+    protected bool $beforeApplyFired = false;
+
+    public function __construct(
+        protected string $rootDir,
+    ) {}
 
     /**
      * Load environment variables from .env files
@@ -57,14 +54,16 @@ class Config
     /**
      * Set a configuration value
      *
-     * If $key is an array, then it will be treated as a map of key/value pairs
+     * Calling set() with a key that already exists in the config map will
+     * overwrite the previous value. This is intentional for use in when()
+     * blocks where environment-specific values override defaults.
      *
-     * @param string|array $key
-     * @param mixed $value
+     * @param  string|array<string, mixed>  $key
      * @return self
+     *
      * @throws ConstantAlreadyDefinedException
      */
-    public function set(string|array $key, $value = null): self
+    public function set(string|array $key, mixed $value = null): self
     {
         if (is_array($key)) {
             return $this->setMany($key);
@@ -84,42 +83,43 @@ class Config
     /**
      * Set a configuration value from an environment variable
      *
-     * If the environment variable is not defined, then the default value will be used.
+     * Reads from $_ENV then falls back to getenv(). If the environment
+     * variable is not defined, the default value will be used.
      *
-     * If $key is an array, then it will be treated as an indexed array of environment variables.
+     * If $key is an array, it will be treated as an indexed array of
+     * environment variable names.
      *
-     * @param string|array $key
-     * @param mixed $default
+     * @param  string|string[]  $key
      * @return self
+     *
      * @throws ConstantAlreadyDefinedException
      */
-    public function env(string|array $key, $default = null): self
+    public function env(string|array $key, mixed $default = null): self
     {
         if (is_array($key)) {
             return $this->envMany($key, $default);
         }
 
-        $value = match (true) {
-            function_exists('env') => env($key, $default),
-            function_exists('\Env\env') => \Env\env($key) ?? $default,
-            default => getenv($key) ?? $_ENV[$key] ?? $default,
+        $value = $_ENV[$key] ?? match (getenv($key)) {
+            false => $default,
+            default => getenv($key),
         };
 
-        $this->set($key, $value);
-
-        return $this;
+        return $this->set($key, $value);
     }
 
     /**
      * Get a configuration value
      *
-     * @param string $key
-     * @return mixed
      * @throws UndefinedConfigKeyException
      */
-    public function get(string $key)
+    public function get(string $key, mixed $default = null): mixed
     {
-        if (!array_key_exists($key, $this->configMap)) {
+        if (! array_key_exists($key, $this->configMap)) {
+            if (func_num_args() >= 2) {
+                return $default;
+            }
+
             throw new UndefinedConfigKeyException(
                 "'$key' has not been defined. Use `set('$key', ...)` first.",
             );
@@ -131,13 +131,11 @@ class Config
     /**
      * Conditionally execute configuration logic
      *
-     * @param bool|callable $condition
-     * @param callable $callback
-     * @return self
+     * @param  bool|Closure  $condition
      */
-    public function when($condition, callable $callback): self
+    public function when(bool|Closure $condition, callable $callback): self
     {
-        $result = is_callable($condition) ? $condition($this) : $condition;
+        $result = $condition instanceof Closure ? $condition($this) : $condition;
 
         if ($result) {
             $callback($this);
@@ -149,41 +147,39 @@ class Config
     /**
      * Add an action hook
      *
-     * @param string $tag The hook name
-     * @param callable $callback The callback function
-     * @param int $priority The priority (lower numbers = higher priority)
-     * @return void
+     * @param  string  $tag  The hook name
+     * @param  callable  $callback  The callback function
+     * @param  int  $priority  The priority (lower numbers = higher priority)
      */
-    public static function add_action(string $tag, callable $callback, int $priority = 10): void
+    public function add_action(string $tag, callable $callback, int $priority = 10): self
     {
-        if (!isset(static::$hooks[$tag])) {
-            static::$hooks[$tag] = [];
-        }
-
-        static::$hooks[$tag][] = [
+        $this->hooks[$tag][] = [
             'callback' => $callback,
             'priority' => $priority,
         ];
+
+        return $this;
     }
 
     /**
      * Execute actions for a hook
      *
-     * @param string $tag The hook name
-     * @param mixed ...$args Additional arguments to pass to callbacks
-     * @return self
+     * @param  string  $tag  The hook name
+     * @param  mixed  ...$args  Additional arguments to pass to callbacks
      */
-    public function do_action(string $tag, ...$args): self
+    public function do_action(string $tag, mixed ...$args): self
     {
-        if (!isset(static::$hooks[$tag])) {
+        if ($tag === 'before_apply') {
+            $this->beforeApplyFired = true;
+        }
+
+        if (! isset($this->hooks[$tag])) {
             return $this;
         }
 
-        // Sort hooks by priority (lower numbers = higher priority)
-        $hooks = static::$hooks[$tag];
+        $hooks = $this->hooks[$tag];
         usort($hooks, fn($a, $b) => $a['priority'] <=> $b['priority']);
 
-        // Execute hooks with $config as first parameter
         foreach ($hooks as $hook) {
             $hook['callback']($this, ...$args);
         }
@@ -194,14 +190,21 @@ class Config
     /**
      * Define all configuration values
      *
+     * Automatically executes any registered `before_apply` hooks before
+     * defining constants. The guard ensures `before_apply` only fires once
+     * per `apply()` call, even if `do_action('before_apply')` was called
+     * manually beforehand.
+     *
      * @throws ConstantAlreadyDefinedException
      */
     public function apply(): void
     {
-        // Execute any registered before_apply hooks
-        $this->do_action('before_apply');
+        if (! $this->beforeApplyFired) {
+            $this->do_action('before_apply');
+        }
 
-        // Check for any conflicts before applying
+        $this->beforeApplyFired = false;
+
         foreach ($this->configMap as $key => $value) {
             if ($this->isConstantDefined($key) && constant($key) !== $value) {
                 throw new ConstantAlreadyDefinedException(
@@ -210,14 +213,16 @@ class Config
             }
         }
 
-        // Apply all configurations
         foreach ($this->configMap as $key => $value) {
-            if (!defined($key)) {
+            if (! defined($key)) {
                 define($key, $value);
             }
         }
     }
 
+    /**
+     * @param  array<string, mixed>  $configMap
+     */
     protected function setMany(array $configMap): self
     {
         foreach ($configMap as $key => $value) {
@@ -227,7 +232,10 @@ class Config
         return $this;
     }
 
-    protected function envMany(array $configMap, $default): self
+    /**
+     * @param  string[]  $configMap
+     */
+    protected function envMany(array $configMap, mixed $default): self
     {
         foreach ($configMap as $key) {
             $this->env($key, $default);
@@ -236,12 +244,6 @@ class Config
         return $this;
     }
 
-    /**
-     * Check if a constant is already defined
-     *
-     * @param string $key
-     * @return bool
-     */
     protected function isConstantDefined(string $key): bool
     {
         return defined($key);

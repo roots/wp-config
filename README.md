@@ -9,9 +9,12 @@ Fluent configuration management for WordPress
 
 ```php
 $config = new Config($rootDir);
+$config->bootstrapEnv();
+
 $config
+    ->env('WP_ENV', 'production')
+    ->env('WP_HOME')
     ->set('WP_DEBUG', true)
-    ->set('WP_HOME', env('WP_HOME'))
     ->when($config->get('WP_ENV') === 'development', function($config) {
         $config
             ->set('SAVEQUERIES', true)
@@ -20,11 +23,10 @@ $config
     ->apply();
 ```
 
-- 🔄 Fluent API for clean, chainable configuration
-- 🌍 Built-in environment variable loading
-- 🔀 Conditional configuration with `when()`
-- 🪝 WordPress-style hook system for extensible configuration
-- 📦 Zero dependencies (except `vlucas/phpdotenv`)
+- Fluent API for clean, chainable configuration
+- Built-in environment variable loading via `vlucas/phpdotenv`
+- Conditional configuration with `when()`
+- Instance-scoped hook system for extensible configuration
 
 ## Support us
 
@@ -61,7 +63,8 @@ $config
 
 ```php
 $config
-    ->when(env('WP_ENV') === 'development', function($config) {
+    ->env('WP_ENV', 'production')
+    ->when($config->get('WP_ENV') === 'development', function($config) {
         $config
             ->set('WP_DEBUG', true)
             ->set('SAVEQUERIES', true)
@@ -73,6 +76,9 @@ $config
 
 ```php
 $home = $config->get('WP_HOME');
+
+// With a default value (no exception if key is missing)
+$env = $config->get('WP_ENV', 'production');
 
 $config
     ->set('WP_SITEURL', $config->get('WP_HOME') . '/wp')
@@ -87,18 +93,19 @@ The Config class includes built-in support for loading environment variables:
 $config->bootstrapEnv(); // Loads .env and .env.local files
 
 $config
-    ->set('DB_NAME', env('DB_NAME'))
-    ->set('DB_USER', env('DB_USER'))
+    ->env('DB_NAME')
+    ->env('DB_USER')
+    ->env('DB_HOST', 'localhost')
     ->apply();
 ```
 
 ### Hook system
 
-The Config class includes a WordPress-style hook system for extensible configuration:
+The Config class includes an instance-scoped hook system for extensible configuration:
 
 ```php
 // Register a hook
-Config::add_action('security_setup', function($config) {
+$config->add_action('security_setup', function($config) {
     $config->set('FORCE_SSL_ADMIN', true);
     $config->set('DISALLOW_FILE_EDIT', true);
 });
@@ -116,19 +123,17 @@ The Config class automatically executes any `before_apply` hooks when `apply()` 
 
 ```php
 // Package authors can register automatic configuration
-Config::add_action('before_apply', function($config) {
+$config->add_action('before_apply', function($config) {
     // This runs automatically when apply() is called
     $config->set('AUTOMATIC_CONFIG', 'set by package');
 });
 
 // Users just need to call apply() - no manual hook management required
 $config
-    ->set('WP_HOME', env('WP_HOME'))
-    ->set('WP_SITEURL', env('WP_HOME') . '/wp')
+    ->env('WP_HOME')
+    ->set('WP_SITEURL', $config->get('WP_HOME') . '/wp')
     ->apply(); // Automatically runs all before_apply hooks
 ```
-
-This pattern is especially useful for packages that need to configure WordPress automatically without requiring users to manually call hooks in their configuration files.
 
 ## Upgrading from v1
 
@@ -157,7 +162,7 @@ After:
 $config = new Config($rootDir);
 $config
     ->set('WP_DEBUG', true)
-    ->set('WP_HOME', env('WP_HOME'))
+    ->env('WP_HOME')
     ->apply();
 ```
 
@@ -179,7 +184,8 @@ After:
 
 ```php
 $config
-    ->set('WP_HOME', env('WP_HOME'))
+    ->env('WP_ENV', 'production')
+    ->env('WP_HOME')
     ->when($config->get('WP_ENV') === 'development', function($config) {
         $config
             ->set('WP_DEBUG', true)
@@ -204,6 +210,27 @@ $config = new Config($rootDir);
 $config->bootstrapEnv();
 ```
 
+### Step 5: Update hook usage
+
+Hooks are now instance methods instead of static methods:
+
+Before:
+
+```php
+Config::add_action('before_apply', function($config) { ... });
+```
+
+After:
+
+```php
+$config->add_action('before_apply', function($config) { ... });
+```
+
+### Removed APIs
+
+- `Config::remove()` has been removed. Use `when()` blocks to conditionally set values instead.
+- `set()` now overwrites previous values for the same key (useful in `when()` blocks for overriding defaults).
+
 ## API reference
 
 ### Config class
@@ -214,20 +241,23 @@ Creates a new Config instance with the specified root directory.
 #### `bootstrapEnv(): self`
 Loads environment variables from .env files.
 
-#### `set(string $key, mixed $value): self`
-Sets a configuration value.
+#### `set(string|array $key, mixed $value = null): self`
+Sets a configuration value. Accepts a key/value pair or an associative array. Overwrites existing config map entries. Throws `ConstantAlreadyDefinedException` if a PHP constant with that name already exists.
 
-#### `get(string $key): mixed`
-Gets a configuration value.
+#### `env(string|array $key, mixed $default = null): self`
+Sets a configuration value from an environment variable. Falls back to `$default` if the variable is not set.
 
-#### `when($condition, callable $callback): self`
-Conditionally executes configuration logic.
+#### `get(string $key, mixed $default = null): mixed`
+Gets a configuration value. Returns `$default` if the key is not set and a default is provided. Throws `UndefinedConfigKeyException` if the key is not set and no default is provided.
+
+#### `when(bool|Closure $condition, callable $callback): self`
+Conditionally executes configuration logic. The condition can be a boolean or a Closure that receives the Config instance.
 
 #### `apply(): void`
-Applies all configuration values by defining constants.
+Applies all configuration values by defining constants. Automatically runs `before_apply` hooks first.
 
-#### `add_action(string $tag, callable $callback, int $priority = 10): void`
-Adds a hook callback that can be executed later with `do_action()`. Static method.
+#### `add_action(string $tag, callable $callback, int $priority = 10): self`
+Adds a hook callback that can be executed later with `do_action()`. Returns `$this` for chaining.
 
 #### `do_action(string $tag, ...$args): self`
 Executes all callbacks registered for the specified hook. Returns `$this` for chaining.
@@ -235,7 +265,125 @@ Executes all callbacks registered for the specified hook. Returns `$this` for ch
 ### Exceptions
 
 - `ConstantAlreadyDefinedException`: Thrown when attempting to redefine a constant
-- `UndefinedConfigKeyException`: Thrown when accessing an undefined configuration key
+- `UndefinedConfigKeyException`: Thrown when accessing an undefined configuration key without a default
+
+## Full example
+
+A complete Bedrock-style `application.php` configuration file:
+
+```php
+<?php
+
+use Roots\WPConfig\Config;
+
+$rootDir = dirname(__DIR__);
+$webrootDir = $rootDir . '/web';
+
+$config = new Config($rootDir);
+$config->bootstrapEnv()
+       ->do_action('config_loaded');
+
+$config
+    /**
+     * DB settings
+     */
+    ->env(['DB_NAME', 'DB_USER', 'DB_PASSWORD'])
+    ->env('DB_HOST', 'localhost')
+    ->set([
+        'DB_CHARSET' => 'utf8mb4',
+        'DB_COLLATE' => '',
+    ])
+    ->do_action('database_configured')
+
+    /**
+     * URLs
+     */
+    ->env('WP_HOME')
+    ->set('WP_SITEURL', $config->get('WP_HOME') . '/wp')
+    ->do_action('urls_configured')
+
+    /**
+     * Environment
+     */
+    ->env('WP_ENV', 'production')
+    ->set('WP_ENVIRONMENT_TYPE', $config->get('WP_ENV'))
+    ->do_action('environment_loaded')
+
+    /**
+     * Content directory
+     */
+    ->set([
+        'CONTENT_DIR' => '/app',
+        'WP_CONTENT_DIR' => $webrootDir . '/app',
+        'WP_CONTENT_URL' => $config->get('WP_HOME') . '/app',
+    ])
+
+    /**
+     * Authentication unique keys and salts
+     */
+    ->env([
+        'AUTH_KEY', 'SECURE_AUTH_KEY', 'LOGGED_IN_KEY', 'NONCE_KEY',
+        'AUTH_SALT', 'SECURE_AUTH_SALT', 'LOGGED_IN_SALT', 'NONCE_SALT',
+    ])
+
+    /**
+     * Custom settings
+     */
+    ->set('AUTOMATIC_UPDATER_DISABLED', true)
+    ->env('DISABLE_WP_CRON', false)
+    ->set('DISALLOW_FILE_EDIT', true)
+    ->env('DISALLOW_FILE_MODS', true)
+    ->env('WP_POST_REVISIONS', true)
+
+    /**
+     * Performance settings
+     */
+    ->set('CONCATENATE_SCRIPTS', false)
+
+    /**
+     * Default debug settings
+     */
+    ->env('WP_DEBUG', false)
+    ->set('WP_DEBUG_DISPLAY', false)
+    ->set('WP_DEBUG_LOG', false)
+    ->set('SCRIPT_DEBUG', false)
+
+    /**
+     * Development settings
+     */
+    ->when($config->get('WP_ENV') === 'development', function ($config) {
+        $config->set([
+            'SAVEQUERIES' => true,
+            'WP_DEBUG' => true,
+            'WP_DEBUG_DISPLAY' => true,
+            'WP_DEBUG_LOG' => true,
+            'WP_DISABLE_FATAL_ERROR_HANDLER' => true,
+            'SCRIPT_DEBUG' => true,
+            'DISALLOW_INDEXING' => true,
+            'DISALLOW_FILE_MODS' => false,
+        ]);
+    })
+
+    /**
+     * Handle reverse proxy settings
+     */
+    ->when(
+        isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https',
+        function () { $_SERVER['HTTPS'] = 'on'; },
+    )
+
+    ->apply();
+
+$config->do_action('after_apply');
+
+$table_prefix = $_ENV['DB_PREFIX'] ?? 'wp_';
+
+if (! defined('ABSPATH')) {
+    define('ABSPATH', $webrootDir . '/wp/');
+}
+
+require_once ABSPATH . 'wp-settings.php';
+```
 
 ## Community
 

@@ -27,15 +27,18 @@
     "illuminate/support": "^12.2",
     "laravel/pint": "^1.13",
     "oscarotero/env": "^2.1",
-    "phpunit/phpunit": "^10.0"
+    "pestphp/pest": "^3.0"
   },
   "scripts": {
-    "test": "phpunit",
+    "test": "pest",
     "lint": "pint --test",
     "lint:fix": "pint"
   },
   "config": {
-    "sort-packages": true
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
   },
   "minimum-stability": "dev",
   "prefer-stable": true

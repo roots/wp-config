@@ -1,7 +1,7 @@
 # wp-config
 
+[![Build Status](https://img.shields.io/github/actions/workflow/status/roots/wp-config/main.yml?branch=master&logo=github&label=CI&style=flat-square)](https://github.com/roots/wp-config/actions/workflows/main.yml)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/roots/wp-config?label=downloads&colorB=2b3072&colorA=525ddc&style=flat-square)](https://packagist.org/packages/roots/wp-config)
-[![Coverage Status](https://img.shields.io/coveralls/github/roots/wp-config/master?style=flat-square)](https://coveralls.io/github/roots/wp-config?branch=master)
 [![Follow Roots](https://img.shields.io/badge/follow%20@rootswp-1da1f2?logo=twitter&logoColor=ffffff&message=&style=flat-square)](https://twitter.com/rootswp)
 [![Sponsor Roots](https://img.shields.io/badge/sponsor%20roots-525ddc?logo=github&style=flat-square&logoColor=ffffff&message=)](https://github.com/sponsors/roots)
 

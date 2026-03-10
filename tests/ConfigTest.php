@@ -2,159 +2,155 @@
 
 declare(strict_types=1);
 
-namespace Roots\WPConfig\Tests;
-
-use PHPUnit\Framework\Attributes\Depends;
-use PHPUnit\Framework\TestCase;
 use Roots\WPConfig\Config;
 use Roots\WPConfig\Exceptions\ConstantAlreadyDefinedException;
 use Roots\WPConfig\Exceptions\UndefinedConfigKeyException;
 
-/**
- * @runTestsInSeparateProcesses
- */
-class ConfigTest extends TestCase
+function withDotEnv(Config $config, string $env = "TEST_ENV_VAR=test_value\n"): void
 {
-    protected string $rootDir;
-    protected Config $config;
+    $rootDir = dirname(__DIR__);
+    file_put_contents($rootDir . '/.env', $env);
+    $config->bootstrapEnv();
+    unlink($rootDir . '/.env');
+}
 
-    protected function setUp(): void
-    {
-        $this->rootDir = dirname(__DIR__);
-        $this->config = new Config($this->rootDir);
-    }
+beforeEach(function () {
+    $this->rootDir = dirname(__DIR__);
+    $this->config = new Config($this->rootDir);
+});
 
-    public function testFluentInterface()
-    {
+describe('set', function () {
+    it('supports fluent interface', function () {
         $result = $this->config
             ->set('TEST_1', 'value1')
             ->set('TEST_2', 'value2');
 
-        $this->assertInstanceOf(Config::class, $result);
-        $this->assertEquals('value1', $this->config->get('TEST_1'));
-        $this->assertEquals('value2', $this->config->get('TEST_2'));
-    }
+        expect($result)->toBeInstanceOf(Config::class);
+        expect($this->config->get('TEST_1'))->toBe('value1');
+        expect($this->config->get('TEST_2'))->toBe('value2');
+    });
 
-    public function testSetArray()
-    {
+    it('accepts an array of key/value pairs', function () {
         $this->config->set([
             'TEST_1' => 'value1',
             'TEST_2' => 'value2',
         ]);
 
-        $this->assertEquals('value1', $this->config->get('TEST_1'));
-        $this->assertEquals('value2', $this->config->get('TEST_2'));
-    }
+        expect($this->config->get('TEST_1'))->toBe('value1');
+        expect($this->config->get('TEST_2'))->toBe('value2');
+    });
 
-    #[Depends('testBootstrapEnv')]
-    public function testEnv()
-    {
-        $this->withDotEnv();
+    it('throws when constant is already defined', function () {
+        define('EXISTING_CONSTANT', 'original');
+        $this->config->set('EXISTING_CONSTANT', 'new');
+    })->throws(ConstantAlreadyDefinedException::class);
+});
+
+describe('get', function () {
+    it('throws for undefined key', function () {
+        $this->config->get('UNDEFINED_KEY');
+    })->throws(UndefinedConfigKeyException::class);
+});
+
+describe('env', function () {
+    it('loads env variables with defaults', function () {
+        withDotEnv($this->config);
         $this->config->env('TEST_ENV_VAR');
         $this->config->env('BOGUS_ENV_VAR');
         $this->config->env('BOGUS_ENV_VAR_WITH_DEFAULT', 'default_value');
 
-        $this->assertEquals('test_value', $this->config->get('TEST_ENV_VAR'));
-        $this->assertNull($this->config->get('BOGUS_ENV_VAR'));
-        $this->assertEquals('default_value', $this->config->get('BOGUS_ENV_VAR_WITH_DEFAULT'));
-    }
+        expect($this->config->get('TEST_ENV_VAR'))->toBe('test_value');
+        expect($this->config->get('BOGUS_ENV_VAR'))->toBeNull();
+        expect($this->config->get('BOGUS_ENV_VAR_WITH_DEFAULT'))->toBe('default_value');
+    });
 
-    #[Depends('testBootstrapEnv')]
-    public function testEnvArray()
-    {
-        $this->withDotEnv(<<<ENV
+    it('accepts an array of env variable names', function () {
+        withDotEnv($this->config, <<<ENV
         TEST_ENV_VAR_1=value1
         TEST_ENV_VAR_2=value2
         ENV);
         $this->config->env(['TEST_ENV_VAR_1', 'TEST_ENV_VAR_2', 'BOGUS_ENV_VAR']);
 
-        $this->assertEquals('value1', $this->config->get('TEST_ENV_VAR_1'));
-        $this->assertEquals('value2', $this->config->get('TEST_ENV_VAR_2'));
-        $this->assertNull($this->config->get('BOGUS_ENV_VAR'));
-    }
+        expect($this->config->get('TEST_ENV_VAR_1'))->toBe('value1');
+        expect($this->config->get('TEST_ENV_VAR_2'))->toBe('value2');
+        expect($this->config->get('BOGUS_ENV_VAR'))->toBeNull();
+    });
+});
 
-    public function testGetUndefinedKey()
-    {
-        $this->expectException(UndefinedConfigKeyException::class);
-        $this->config->get('UNDEFINED_KEY');
-    }
+describe('when', function () {
+    it('executes callback when condition is true', function () {
+        $this->config->when(true, function ($config) {
+            $config->set('CONDITION_TRUE', true);
+        });
 
-    public function testDefineConflict()
-    {
-        $this->expectException(ConstantAlreadyDefinedException::class);
+        expect($this->config->get('CONDITION_TRUE'))->toBeTrue();
+    });
 
-        define('EXISTING_CONSTANT', 'original');
-        $this->config->set('EXISTING_CONSTANT', 'new');
-    }
+    it('skips callback when condition is false', function () {
+        $this->config->when(false, function ($config) {
+            $config->set('CONDITION_FALSE', true);
+        });
 
-    public function testWhenCondition()
-    {
-        $this->config
-            ->when(true, function ($config) {
-                $config->set('CONDITION_TRUE', true);
-            })
-            ->when(false, function ($config) {
-                $config->set('CONDITION_FALSE', true);
-            })
-            ->when(function ($config) {
-                return true;
-            }, function ($config) {
-                $config->set('CONDITION_CALLBACK', true);
-            });
-
-        $this->assertEquals(true, $this->config->get('CONDITION_TRUE'));
-        $this->expectException(UndefinedConfigKeyException::class);
         $this->config->get('CONDITION_FALSE');
-        $this->assertEquals(true, $this->config->get('CONDITION_CALLBACK'));
-    }
+    })->throws(UndefinedConfigKeyException::class);
 
-    public function testApply()
-    {
+    it('accepts a callable condition', function () {
+        $this->config->when(function ($config) {
+            return true;
+        }, function ($config) {
+            $config->set('CONDITION_CALLBACK', true);
+        });
+
+        expect($this->config->get('CONDITION_CALLBACK'))->toBeTrue();
+    });
+});
+
+describe('bootstrapEnv', function () {
+    it('loads env variables from .env file', function () {
+        withDotEnv($this->config);
+
+        expect(getenv('TEST_ENV_VAR'))->toBe('test_value');
+    });
+});
+
+describe('apply', function () {
+    it('defines constants from config values', function () {
         $this->config
             ->set('CONFIG_TEST_1', 'applied1')
             ->set('CONFIG_TEST_2', 'applied2')
             ->apply();
 
-        $this->assertTrue(defined('CONFIG_TEST_1'));
-        $this->assertTrue(defined('CONFIG_TEST_2'));
-        $this->assertEquals('applied1', CONFIG_TEST_1);
-        $this->assertEquals('applied2', CONFIG_TEST_2);
-    }
+        expect(defined('CONFIG_TEST_1'))->toBeTrue();
+        expect(defined('CONFIG_TEST_2'))->toBeTrue();
+        expect(CONFIG_TEST_1)->toBe('applied1');
+        expect(CONFIG_TEST_2)->toBe('applied2');
+    });
 
-    public function testApplyWithConflict()
-    {
-        $this->expectException(ConstantAlreadyDefinedException::class);
+    it('defines constants from array config', function () {
+        $this->config
+            ->set([
+                'CONFIG_ARR_1' => 'applied1',
+                'CONFIG_ARR_2' => 'applied2',
+            ])
+            ->apply();
 
+        expect(defined('CONFIG_ARR_1'))->toBeTrue();
+        expect(defined('CONFIG_ARR_2'))->toBeTrue();
+        expect(CONFIG_ARR_1)->toBe('applied1');
+        expect(CONFIG_ARR_2)->toBe('applied2');
+    });
+
+    it('throws when constant already exists with different value', function () {
         define('CONFLICT_TEST', 'original');
 
         $this->config
             ->set('CONFLICT_TEST', 'new')
             ->apply();
-    }
+    })->throws(ConstantAlreadyDefinedException::class);
+});
 
-    public function testBootstrapEnv()
-    {
-        $this->withDotEnv();
-        $this->assertEquals('test_value', getenv('TEST_ENV_VAR'));
-    }
-
-    public function testApplyWithArray()
-    {
-        $this->config
-            ->set([
-                'CONFIG_TEST_1' => 'applied1',
-                'CONFIG_TEST_2' => 'applied2',
-            ])
-            ->apply();
-
-        $this->assertTrue(defined('CONFIG_TEST_1'));
-        $this->assertTrue(defined('CONFIG_TEST_2'));
-        $this->assertEquals('applied1', CONFIG_TEST_1);
-        $this->assertEquals('applied2', CONFIG_TEST_2);
-    }
-
-    public function testAutomaticBeforeApplyHook()
-    {
+describe('hooks', function () {
+    it('executes before_apply hooks automatically', function () {
         $hookExecuted = false;
 
         Config::add_action('before_apply', function ($config) use (&$hookExecuted) {
@@ -165,12 +161,11 @@ class ConfigTest extends TestCase
             ->set('HOOK_TEST', 'value')
             ->apply();
 
-        $this->assertTrue($hookExecuted);
-        $this->assertTrue(defined('HOOK_TEST'));
-    }
+        expect($hookExecuted)->toBeTrue();
+        expect(defined('HOOK_TEST'))->toBeTrue();
+    });
 
-    public function testMultipleBeforeApplyHooksWithPriority()
-    {
+    it('executes hooks in priority order', function () {
         $executionOrder = [];
 
         Config::add_action('before_apply', function ($config) use (&$executionOrder) {
@@ -185,12 +180,11 @@ class ConfigTest extends TestCase
             ->set('PRIORITY_TEST', 'value')
             ->apply();
 
-        $this->assertEquals(['first', 'second'], $executionOrder);
-        $this->assertTrue(defined('PRIORITY_TEST'));
-    }
+        expect($executionOrder)->toBe(['first', 'second']);
+        expect(defined('PRIORITY_TEST'))->toBeTrue();
+    });
 
-    public function testBeforeApplyHookReceivesConfigInstance()
-    {
+    it('passes config instance to hook callbacks', function () {
         $receivedConfig = null;
 
         Config::add_action('before_apply', function ($config) use (&$receivedConfig) {
@@ -201,11 +195,10 @@ class ConfigTest extends TestCase
             ->set('INSTANCE_TEST', 'value')
             ->apply();
 
-        $this->assertSame($this->config, $receivedConfig);
-    }
+        expect($receivedConfig)->toBe($this->config);
+    });
 
-    public function testBeforeApplyHookCanModifyConfig()
-    {
+    it('allows hooks to modify config', function () {
         Config::add_action('before_apply', function ($config) {
             $config->set('HOOK_ADDED', 'added_by_hook');
         });
@@ -214,16 +207,9 @@ class ConfigTest extends TestCase
             ->set('ORIGINAL_CONFIG', 'original')
             ->apply();
 
-        $this->assertTrue(defined('ORIGINAL_CONFIG'));
-        $this->assertTrue(defined('HOOK_ADDED'));
-        $this->assertEquals('original', ORIGINAL_CONFIG);
-        $this->assertEquals('added_by_hook', HOOK_ADDED);
-    }
-
-    protected function withDotEnv(string $env = "TEST_ENV_VAR=test_value\n"): void
-    {
-        file_put_contents($this->rootDir . '/.env', $env);
-        $this->config->bootstrapEnv();
-        unlink($this->rootDir . '/.env');
-    }
-}
+        expect(defined('ORIGINAL_CONFIG'))->toBeTrue();
+        expect(defined('HOOK_ADDED'))->toBeTrue();
+        expect(ORIGINAL_CONFIG)->toBe('original');
+        expect(HOOK_ADDED)->toBe('added_by_hook');
+    });
+});

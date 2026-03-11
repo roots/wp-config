@@ -44,6 +44,14 @@ class Config
     ) {}
 
     /**
+     * Create a Config instance with a fluent-friendly named constructor.
+     */
+    public static function make(string $rootDir): static
+    {
+        return new static($rootDir);
+    }
+
+    /**
      * Load environment variables from .env files
      */
     public function bootstrapEnv(): self

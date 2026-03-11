@@ -8,8 +8,7 @@
 Fluent configuration management for WordPress
 
 ```php
-$config = new Config($rootDir);
-$config->bootstrapEnv();
+$config = Config::make($rootDir)->bootstrapEnv();
 
 $config
     ->env('WP_ENV', 'production')
@@ -50,8 +49,7 @@ composer require roots/wp-config:^2.0
 ```php
 use Roots\WPConfig\Config;
 
-$config = new Config($rootDir);
-$config->bootstrapEnv();
+$config = Config::make($rootDir)->bootstrapEnv();
 
 $config
     ->set('WP_DEBUG', true)
@@ -159,7 +157,7 @@ Config::apply();
 After:
 
 ```php
-$config = new Config($rootDir);
+$config = Config::make($rootDir);
 $config
     ->set('WP_DEBUG', true)
     ->env('WP_HOME')
@@ -206,8 +204,7 @@ $dotenv->load();
 After:
 
 ```php
-$config = new Config($rootDir);
-$config->bootstrapEnv();
+$config = Config::make($rootDir)->bootstrapEnv();
 ```
 
 ### Step 5: Update hook usage
@@ -237,6 +234,9 @@ $config->addAction('before_apply', function($config) { ... });
 
 #### `__construct(string $rootDir)`
 Creates a new Config instance with the specified root directory.
+
+#### `make(string $rootDir): static`
+Creates a new Config instance with a fluent-friendly named constructor.
 
 #### `bootstrapEnv(): self`
 Loads environment variables from .env files.
@@ -279,8 +279,7 @@ use Roots\WPConfig\Config;
 $rootDir = dirname(__DIR__);
 $webrootDir = $rootDir . '/web';
 
-$config = new Config($rootDir);
-$config->bootstrapEnv()
+$config = Config::make($rootDir)->bootstrapEnv()
        ->doAction('config_loaded');
 
 $config

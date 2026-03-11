@@ -19,6 +19,18 @@ beforeEach(function () {
     $this->config = new Config($this->rootDir);
 });
 
+describe('make', function () {
+    it('creates a config instance', function () {
+        expect(Config::make($this->rootDir))->toBeInstanceOf(Config::class);
+    });
+
+    it('uses late static binding', function () {
+        $child = new class ($this->rootDir) extends Config {};
+
+        expect($child::make($this->rootDir))->toBeInstanceOf($child::class);
+    });
+});
+
 describe('set', function () {
     it('supports fluent interface', function () {
         $result = $this->config

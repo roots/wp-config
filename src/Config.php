@@ -120,7 +120,7 @@ class Config
             default => getenv($key),
         };
 
-        return $this->set($key, $value);
+        return $this->set($key, is_string($value) ? $this->coerce($value) : $value);
     }
 
     /**
@@ -248,6 +248,23 @@ class Config
         }
 
         return $this;
+    }
+
+    /**
+     * Coerce a string value to its native type.
+     */
+    protected function coerce(string $value): mixed
+    {
+        return match (strtolower($value)) {
+            'true' => true,
+            'false' => false,
+            'null', '' => null,
+            default => match (true) {
+                ctype_digit($value) => (int) $value,
+                is_numeric($value) => (float) $value,
+                default => $value,
+            },
+        };
     }
 
     /**

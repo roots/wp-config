@@ -113,6 +113,46 @@ describe('env', function () {
 
         expect($this->config->get('DEFINITELY_NOT_SET_ENV_VAR'))->toBe('the_default');
     });
+
+    it('coerces boolean strings', function () {
+        withDotEnv($this->config, "COERCE_TRUE=true\nCOERCE_FALSE=false\n");
+        $this->config->env('COERCE_TRUE');
+        $this->config->env('COERCE_FALSE');
+
+        expect($this->config->get('COERCE_TRUE'))->toBeTrue();
+        expect($this->config->get('COERCE_FALSE'))->toBeFalse();
+    });
+
+    it('coerces null and empty strings', function () {
+        withDotEnv($this->config, "COERCE_NULL=null\nCOERCE_EMPTY=\n");
+        $this->config->env('COERCE_NULL');
+        $this->config->env('COERCE_EMPTY');
+
+        expect($this->config->get('COERCE_NULL'))->toBeNull();
+        expect($this->config->get('COERCE_EMPTY'))->toBeNull();
+    });
+
+    it('coerces numeric strings', function () {
+        withDotEnv($this->config, "COERCE_INT=42\nCOERCE_FLOAT=3.14\n");
+        $this->config->env('COERCE_INT');
+        $this->config->env('COERCE_FLOAT');
+
+        expect($this->config->get('COERCE_INT'))->toBe(42);
+        expect($this->config->get('COERCE_FLOAT'))->toBe(3.14);
+    });
+
+    it('preserves plain strings', function () {
+        withDotEnv($this->config, "COERCE_STR=hello\n");
+        $this->config->env('COERCE_STR');
+
+        expect($this->config->get('COERCE_STR'))->toBe('hello');
+    });
+
+    it('does not coerce non-env defaults', function () {
+        $this->config->env('NOT_SET_BOOL', false);
+
+        expect($this->config->get('NOT_SET_BOOL'))->toBeFalse();
+    });
 });
 
 describe('when', function () {

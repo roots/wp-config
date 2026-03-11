@@ -313,7 +313,7 @@ $config
      */
     ->set([
         'CONTENT_DIR' => '/app',
-        'WP_CONTENT_DIR' => $webrootDir . '/app',
+        'WP_CONTENT_DIR' => "{$webrootDir}/app",
         'WP_CONTENT_URL' => $config->get('WP_HOME') . '/app',
     ])
 
@@ -378,7 +378,7 @@ $config->doAction('after_apply');
 $table_prefix = $_ENV['DB_PREFIX'] ?? 'wp_';
 
 if (! defined('ABSPATH')) {
-    define('ABSPATH', $webrootDir . '/wp/');
+    define('ABSPATH', "{$webrootDir}/wp/");
 }
 
 require_once ABSPATH . 'wp-settings.php';

@@ -52,7 +52,7 @@ class Config
     }
 
     /**
-     * Load environment variables from .env files
+     * Load environment variables from `.env` files.
      */
     public function bootstrapEnv(): self
     {
@@ -73,10 +73,10 @@ class Config
     }
 
     /**
-     * Set a configuration value
+     * Set a configuration value.
      *
-     * Calling set() with a key that already exists in the config map will
-     * overwrite the previous value. This is intentional for use in when()
+     * Calling `set()` with a key that already exists in the config map will
+     * overwrite the previous value. This is intentional for use in `when()`
      * blocks where environment-specific values override defaults.
      *
      * @throws ConstantAlreadyDefinedException
@@ -99,9 +99,9 @@ class Config
     }
 
     /**
-     * Set a configuration value from an environment variable
+     * Set a configuration value from an environment variable.
      *
-     * Reads from $_ENV then falls back to getenv(). If the environment
+     * Reads from `$_ENV` and then falls back to `getenv()`. If the environment
      * variable is not defined, the default value will be used.
      *
      * If $key is an array, it will be treated as an indexed array of
@@ -124,7 +124,7 @@ class Config
     }
 
     /**
-     * Get a configuration value
+     * Get a configuration value.
      *
      * @throws UndefinedConfigKeyException
      */
@@ -144,7 +144,7 @@ class Config
     }
 
     /**
-     * Conditionally execute configuration logic
+     * Conditionally execute configuration logic.
      */
     public function when(bool|Closure $condition, callable $callback): self
     {
@@ -158,7 +158,7 @@ class Config
     }
 
     /**
-     * Add an action hook
+     * Add an action hook.
      */
     public function addAction(string $tag, callable $callback, int $priority = 10): self
     {
@@ -171,7 +171,7 @@ class Config
     }
 
     /**
-     * Execute actions for a hook
+     * Execute actions for a hook.
      */
     public function doAction(string $tag, mixed ...$args): self
     {
@@ -194,7 +194,7 @@ class Config
     }
 
     /**
-     * Define all configuration values
+     * Define all configuration values.
      *
      * Automatically executes any registered `before_apply` hooks before
      * defining constants. The guard ensures `before_apply` only fires once

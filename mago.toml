@@ -1,0 +1,24 @@
+php-version = "8.3"
+
+[source]
+paths = ["src/", "tests/"]
+
+[formatter]
+print-width = 120
+null-type-hint = "question"
+space-before-arrow-function-parameter-list-parenthesis = true
+space-after-logical-not-unary-prefix-operator = true
+sort-uses = true
+
+[linter.rules]
+cyclomatic-complexity = { threshold = 25 }
+function-name = { enabled = false } # test helpers use camelCase
+kan-defect = { enabled = false }
+literal-named-argument = { enabled = false } # too noisy with define(), etc.
+no-isset = { enabled = false } # isset() is the correct way to check array key existence
+no-redundant-file = { enabled = false }
+no-shorthand-ternary = { enabled = false }
+prefer-arrow-function = { enabled = false }
+prefer-static-closure = { enabled = false }
+strict-types = { enabled = false }
+too-many-methods = { threshold = 20 }

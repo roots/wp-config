@@ -56,9 +56,7 @@ class Config
      */
     public function bootstrapEnv(): self
     {
-        $envFiles = file_exists($this->rootDir . '/.env.local')
-            ? ['.env', '.env.local']
-            : ['.env'];
+        $envFiles = file_exists($this->rootDir . '/.env.local') ? ['.env', '.env.local'] : ['.env'];
 
         $repository = RepositoryBuilder::createWithNoAdapters()
             ->addAdapter(EnvConstAdapter::class)
@@ -89,7 +87,7 @@ class Config
 
         if ($this->isConstantDefined($key)) {
             throw new ConstantAlreadyDefinedException(
-                "Aborted trying to redefine constant '$key'. `define('$key', ...)` has already occurred elsewhere.",
+                "Aborted trying to redefine constant '{$key}'. `define('{$key}', ...)` has already occurred elsewhere.",
             );
         }
 
@@ -135,9 +133,7 @@ class Config
                 return $default;
             }
 
-            throw new UndefinedConfigKeyException(
-                "'$key' has not been defined. Use `set('$key', ...)` first.",
-            );
+            throw new UndefinedConfigKeyException("'{$key}' has not been defined. Use `set('{$key}', ...)` first.");
         }
 
         return $this->configMap[$key];
@@ -184,7 +180,7 @@ class Config
         }
 
         $hooks = $this->hooks[$tag];
-        usort($hooks, fn($a, $b) => $a['priority'] <=> $b['priority']);
+        usort($hooks, fn ($a, $b) => $a['priority'] <=> $b['priority']);
 
         foreach ($hooks as $hook) {
             $hook['callback']($this, ...$args);
@@ -213,16 +209,16 @@ class Config
 
         foreach ($this->configMap as $key => $value) {
             if ($this->isConstantDefined($key) && constant($key) !== $value) {
-                throw new ConstantAlreadyDefinedException(
-                    "Cannot redefine constant '$key' with different value.",
-                );
+                throw new ConstantAlreadyDefinedException("Cannot redefine constant '{$key}' with different value.");
             }
         }
 
         foreach ($this->configMap as $key => $value) {
-            if (! defined($key)) {
-                define($key, $value);
+            if (defined($key)) {
+                continue;
             }
+
+            define($key, $value);
         }
     }
 

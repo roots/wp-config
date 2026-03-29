@@ -5,8 +5,8 @@
   "license": "MIT",
   "authors": [
     {
-      "name": "roots.dev",
-      "email": "team@roots.dev"
+      "name": "roots.io",
+      "email": "team@roots.io"
     }
   ],
   "autoload": {
@@ -16,16 +16,13 @@
   },
   "require": {
     "php": ">=8.3",
-    "vlucas/phpdotenv": "^5.6"
-  },
-  "require-dev": {
-    "laravel/pint": "^1.29",
-    "pestphp/pest": "^3.8"
+    "vlucas/phpdotenv": "^5.0"
   },
   "scripts": {
-    "test": "pest",
-    "lint": "pint --test",
-    "lint:fix": "pint"
+    "format": "mago format --check",
+    "format:fix": "mago format",
+    "lint": "mago lint",
+    "test": "pest"
   },
   "config": {
     "sort-packages": true,
@@ -34,5 +31,9 @@
     }
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "require-dev": {
+    "carthage-software/mago": "^1.0",
+    "pestphp/pest": "^4.0"
+  }
 }

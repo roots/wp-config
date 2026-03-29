@@ -25,7 +25,7 @@ describe('make', function () {
     });
 
     it('uses late static binding', function () {
-        $child = new class ($this->rootDir) extends Config {};
+        $child = new class($this->rootDir) extends Config {};
 
         expect($child::make($this->rootDir))->toBeInstanceOf($child::class);
     });
@@ -33,9 +33,7 @@ describe('make', function () {
 
 describe('set', function () {
     it('supports fluent interface', function () {
-        $result = $this->config
-            ->set('TEST_1', 'value1')
-            ->set('TEST_2', 'value2');
+        $result = $this->config->set('TEST_1', 'value1')->set('TEST_2', 'value2');
 
         expect($result)->toBeInstanceOf(Config::class);
         expect($this->config->get('TEST_1'))->toBe('value1');
@@ -98,9 +96,9 @@ describe('env', function () {
 
     it('accepts an array of env variable names', function () {
         withDotEnv($this->config, <<<ENV
-        TEST_ENV_VAR_1=value1
-        TEST_ENV_VAR_2=value2
-        ENV);
+            TEST_ENV_VAR_1=value1
+            TEST_ENV_VAR_2=value2
+            ENV);
         $this->config->env(['TEST_ENV_VAR_1', 'TEST_ENV_VAR_2', 'BOGUS_ENV_VAR']);
 
         expect($this->config->get('TEST_ENV_VAR_1'))->toBe('value1');
@@ -186,8 +184,8 @@ describe('when', function () {
         $this->config->set('CHECK_KEY', 'yes');
 
         $this->config->when(
-            fn($config) => $config->get('CHECK_KEY') === 'yes',
-            fn($config) => $config->set('DERIVED', true),
+            fn ($config) => $config->get('CHECK_KEY') === 'yes',
+            fn ($config) => $config->set('DERIVED', true),
         );
 
         expect($this->config->get('DERIVED'))->toBeTrue();
@@ -216,12 +214,10 @@ describe('apply', function () {
     });
 
     it('defines constants from array config', function () {
-        $this->config
-            ->set([
-                'CONFIG_ARR_1' => 'applied1',
-                'CONFIG_ARR_2' => 'applied2',
-            ])
-            ->apply();
+        $this->config->set([
+            'CONFIG_ARR_1' => 'applied1',
+            'CONFIG_ARR_2' => 'applied2',
+        ])->apply();
 
         expect(defined('CONFIG_ARR_1'))->toBeTrue();
         expect(defined('CONFIG_ARR_2'))->toBeTrue();
@@ -232,9 +228,7 @@ describe('apply', function () {
     it('throws when constant already exists with different value', function () {
         define('CONFLICT_TEST', 'original');
 
-        $this->config
-            ->set('CONFLICT_TEST', 'new')
-            ->apply();
+        $this->config->set('CONFLICT_TEST', 'new')->apply();
     })->throws(ConstantAlreadyDefinedException::class);
 
     it('detects conflicts at apply time for constants defined after set', function () {
@@ -255,9 +249,7 @@ describe('hooks', function () {
             $hookExecuted = true;
         });
 
-        $this->config
-            ->set('HOOK_TEST', 'value')
-            ->apply();
+        $this->config->set('HOOK_TEST', 'value')->apply();
 
         expect($hookExecuted)->toBeTrue();
         expect(defined('HOOK_TEST'))->toBeTrue();
@@ -266,17 +258,23 @@ describe('hooks', function () {
     it('executes hooks in priority order', function () {
         $executionOrder = [];
 
-        $this->config->addAction('before_apply', function ($config) use (&$executionOrder) {
-            $executionOrder[] = 'second';
-        }, 20);
+        $this->config->addAction(
+            'before_apply',
+            function ($config) use (&$executionOrder) {
+                $executionOrder[] = 'second';
+            },
+            20,
+        );
 
-        $this->config->addAction('before_apply', function ($config) use (&$executionOrder) {
-            $executionOrder[] = 'first';
-        }, 10);
+        $this->config->addAction(
+            'before_apply',
+            function ($config) use (&$executionOrder) {
+                $executionOrder[] = 'first';
+            },
+            10,
+        );
 
-        $this->config
-            ->set('PRIORITY_TEST', 'value')
-            ->apply();
+        $this->config->set('PRIORITY_TEST', 'value')->apply();
 
         expect($executionOrder)->toBe(['first', 'second']);
         expect(defined('PRIORITY_TEST'))->toBeTrue();
@@ -289,9 +287,7 @@ describe('hooks', function () {
             $receivedConfig = $config;
         });
 
-        $this->config
-            ->set('INSTANCE_TEST', 'value')
-            ->apply();
+        $this->config->set('INSTANCE_TEST', 'value')->apply();
 
         expect($receivedConfig)->toBe($this->config);
     });
@@ -301,9 +297,7 @@ describe('hooks', function () {
             $config->set('HOOK_ADDED', 'added_by_hook');
         });
 
-        $this->config
-            ->set('ORIGINAL_CONFIG', 'original')
-            ->apply();
+        $this->config->set('ORIGINAL_CONFIG', 'original')->apply();
 
         expect(defined('ORIGINAL_CONFIG'))->toBeTrue();
         expect(defined('HOOK_ADDED'))->toBeTrue();

@@ -16,7 +16,7 @@ concurrency:
 permissions: {}
 
 jobs:
-  lint:
+  php:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,12 +26,17 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          tools: pint:1
           coverage: none
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - run: composer lint
+      - run: composer install --no-interaction --prefer-dist
+
+      - name: Check formatting
+        run: composer run-script format
+
+      - name: Lint
+        run: composer run-script lint
 
   test:
     runs-on: ubuntu-latest

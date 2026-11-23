@@ -202,7 +202,10 @@ describe('bootstrapEnv', function () {
 
 describe('apply', function () {
     it('defines constants from config values', function () {
-        $this->config->set('CONFIG_TEST_1', 'applied1')->set('CONFIG_TEST_2', 'applied2')->apply();
+        $this->config
+            ->set('CONFIG_TEST_1', 'applied1')
+            ->set('CONFIG_TEST_2', 'applied2')
+            ->apply();
 
         expect(defined('CONFIG_TEST_1'))->toBeTrue();
         expect(defined('CONFIG_TEST_2'))->toBeTrue();
@@ -322,7 +325,10 @@ describe('hooks', function () {
             $count++;
         });
 
-        $this->config->set('DOUBLE_FIRE_TEST', true)->doAction('before_apply')->apply();
+        $this->config
+            ->set('DOUBLE_FIRE_TEST', true)
+            ->doAction('before_apply')
+            ->apply();
 
         expect($count)->toBe(1);
         expect(defined('DOUBLE_FIRE_TEST'))->toBeTrue();

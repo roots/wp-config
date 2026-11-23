@@ -33,7 +33,7 @@
   "minimum-stability": "dev",
   "prefer-stable": true,
   "require-dev": {
-    "carthage-software/mago": "^1.0",
+    "carthage-software/mago": "1.61.0",
     "pestphp/pest": "^4.0"
   }
 }
